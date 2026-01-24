@@ -1,0 +1,322 @@
+/* tweaks.css
+ * 現場の微調整専用（ここだけ触る運用）
+ * - 色・文字サイズ・余白・Leafletポップアップ等の“見た目”だけを上書き
+ * - ロジック（JS）やDOM構造変更はしない
+ */
+
+/* =========================
+   1) テーマ色（必要なら）
+   ========================= */
+:root{
+  /* 例：アクセント色を変える場合だけ上書き（普段はコメントのまま） */
+  /* --accent:#4f8cff; */
+  /* --muted:#b6bfd0; */
+}
+
+/* =========================
+   2) 文字サイズ（スマホ見やすく）
+   ========================= */
+/* 投票区一覧：タイトル・集計 */
+.itemTitle{ font-size:16px; line-height:1.25; }
+.itemSub{ font-size:14px; line-height:1.45; }
+
+/* 上部のピル（ユーザー/移動など） */
+.pill{ font-size:13px; padding:7px 12px; }
+
+/* 見出し */
+.h2{ font-size:17px; }
+.h3{ font-size:14px; }
+
+/* ボタン */
+.btn{ font-size:15px; padding:13px 15px; }
+.btn.small{ font-size:14px; padding:10px 12px; }
+
+/* 下タブ */
+.tab{ font-size:14px; padding:12px; }
+
+/* =========================
+   3) 「済」ボタンを控えめに（誤認防止）
+   ========================= */
+/* 既存の .btn.ok が“蛍光”に見える場合の調整 */
+.btn.ok{
+  opacity:.78;
+  font-weight:800;
+}
+
+/* 状態バッジ（未/済）の見た目は維持しつつ、必要ならここで調整 */
+.bDone{ opacity:.95; }
+
+/* =========================
+   4) Leaflet ポップアップ（文字が薄い/崩れる対策）
+   ========================= */
+.leaflet-popup-content{
+  color:#111;
+  font-size:14px;
+  line-height:1.5;
+  margin:12px 14px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.leaflet-popup-content-wrapper{
+  border-radius:14px;
+}
+
+/* =========================
+   5) 触る場所メモ（後で迷わないため）
+   ========================= */
+/*
+- 投票区一覧の「地点：8 / 未：8 / 済：0」→ .itemSub
+- 掲示場行の「#1 / 1-1 未」→ .itemTitle（or 該当クラス）
+- ボタン全般 → .btn / .btn.small / .btn.ok
+- タブ（現場/集計/割当） → .tab
+- Leafletの吹き出し → .leaflet-popup-content
+*/
+
+/* =========================
+   Summary filters: Select / Options visibility fix
+   ========================= */
+
+/* select本体 */
+select,
+select.field,
+select.summarySelect {
+   color: #eef2ff;
+   /* 表示文字（選択中） */
+   background: rgba(255, 255, 255, .08);
+   border: 1px solid rgba(255, 255, 255, .16);
+}
+
+/* 開いたプルダウンの中（option） */
+select option {
+   color: #0b0f1a;
+   /* 重要：プルダウン内の文字を濃く */
+   background: #ffffff;
+   /* 重要：プルダウン内の背景を白に */
+}
+
+/* optgroup使ってる場合 */
+select optgroup {
+   color: #0b0f1a;
+   background: #ffffff;
+}
+
+/* フォーカス時 */
+select:focus {
+   outline: none;
+   border-color: rgba(79, 140, 255, .65);
+   box-shadow: 0 0 0 3px rgba(79, 140, 255, .20);
+}
+
+/* =========================
+   Leaflet popup: visibility fix
+   ========================= */
+
+/* ポップアップ本体（背景を白にする前提で、文字を濃く） */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+   background: #ffffff;
+}
+
+.leaflet-popup-content {
+   color: #0b0f1a;
+   /* 文字色を濃く */
+   font-size: 14px;
+   line-height: 1.45;
+}
+
+/* タイトル行（#6 / 1-6 (未) など） */
+.leaflet-popup-content .popTitle,
+.leaflet-popup-content .popupTitle,
+.leaflet-popup-content strong {
+   color: #0b0f1a;
+   font-weight: 800;
+}
+
+/* 住所・名称など（改行崩れ対策も兼ねる） */
+.leaflet-popup-content .popSub,
+.leaflet-popup-content .popupSub {
+   color: #0b0f1a;
+   opacity: 0.9;
+   white-space: pre-wrap;
+   /* 改行をそのまま表示 */
+   word-break: break-word;
+   /* 長い文字列で崩れない */
+}
+
+/* ポップアップ内ボタン共通：薄くならないように強制 */
+.leaflet-popup-content button,
+.leaflet-popup-content .btn {
+   color: #0b0f1a !important;
+   background: rgba(11, 15, 26, .08) !important;
+   border: 1px solid rgba(11, 15, 26, .18) !important;
+   border-radius: 12px;
+}
+
+/* アクション別（もし class が付いていれば効く） */
+.leaflet-popup-content .btn.primary {
+   background: rgba(79, 140, 255, .20) !important;
+   border-color: rgba(79, 140, 255, .45) !important;
+   color: #0b0f1a !important;
+}
+
+.leaflet-popup-content .btn.ok,
+.leaflet-popup-content .btnDone {
+   background: rgba(47, 226, 125, .22) !important;
+   /* 済（淡色） */
+   border-color: rgba(47, 226, 125, .55) !important;
+   color: #0b0f1a !important;
+}
+
+.leaflet-popup-content .btn.ghost {
+   background: transparent !important;
+}
+
+/* メモ表示（textarea / input）が白背景でも読めるように */
+.leaflet-popup-content textarea,
+.leaflet-popup-content input[type="text"],
+.leaflet-popup-content input {
+   color: #0b0f1a !important;
+   background: #ffffff !important;
+   border: 1px solid rgba(11, 15, 26, .22) !important;
+   border-radius: 10px;
+}
+
+/* “×” 閉じるボタンが薄い場合 */
+.leaflet-popup-close-button {
+   color: #0b0f1a !important;
+   opacity: 0.85;
+}
+
+
+/* =========================
+   TWEAKS: Leaflet ピン（目立つ色・視認性UP）
+   ========================= */
+
+/* ピン自体を少し大きく＆縁取り強め */
+.leaf-dot {
+   width: 20px;
+   height: 20px;
+   border-width: 3px;
+   box-shadow: 0 10px 22px rgba(0, 0, 0, .35);
+}
+
+/* 未：青（公園の緑に埋もれない濃さ＋少し発光） */
+.leaf-dot.todo {
+   background: #1976ff;
+   /* 濃い青 */
+   box-shadow: 0 0 0 4px rgba(25, 118, 255, .25), 0 10px 22px rgba(0, 0, 0, .35);
+}
+
+/* 済：緑（黄色寄りにして地図の緑と差をつける） */
+.leaf-dot.done {
+   background: #00d27a;
+   /* 明るい緑 */
+   box-shadow: 0 0 0 4px rgba(0, 210, 122, .22), 0 10px 22px rgba(0, 0, 0, .35);
+}
+
+/* wrap のサイズも合わせる（ズレ防止） */
+.leaf-dot-wrap {
+   width: 20px;
+   height: 20px;
+}
+
+/* =========================
+   TWEAKS: 未/済バッジを大きく
+   ========================= */
+.badge {
+   font-size: 16px;
+   padding: 8px 12px;
+   border-radius: 999px;
+   font-weight: 800;
+}
+
+/* バッジ自体のコントラストも少し上げる（任意） */
+.bTodo {
+   color: #e6f0ff;
+   background: #1976ff;
+}
+
+.bDone {
+   color: #eafff3;
+   background: #00d27a;
+}
+
+/* ===== Status badge (未/済) bigger ===== */
+.pointMeta .badge {
+   font-size: 16px !important;
+   padding: 8px 8px !important;
+   border-radius: 999px !important;
+   font-weight: 900 !important;
+   letter-spacing: .02em !important;
+   border: 2px solid rgba(255, 255, 255, .95) !important; /* 白縁 */
+}
+
+/* Header logo (override) */
+.topbar .left {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   min-width: 0;
+}
+
+.topbar .nav-logo {
+   display: block;
+   height: 24px !important;
+   width: 24px !important;
+   /* まずは正方形で強制 */
+   max-height: 24px !important;
+   max-width: 24px !important;
+   object-fit: contain;
+}
+
+.topbar .title {
+   line-height: 1;
+}
+
+/* --- allocator/planner: pending badge 強調 --- */
+.badgePending {
+   display: inline-flex;
+   align-items: center;
+   gap: .35em;
+   font-weight: 900;
+   border: 1px solid rgba(255, 204, 102, .55);
+   background: rgba(255, 204, 102, .18);
+   color: #ffd58a;
+   padding: 6px 10px;
+   border-radius: 999px;
+}
+
+/* --- toast を画面中央に（保存/変更の表示を統一） --- */
+.toast {
+   left: 50% !important;
+   right: auto !important;
+   top: 50% !important;
+   transform: translate(-50%, -50%) !important;
+   width: min(92vw, 420px);
+   z-index: 1000;
+}
+
+.toast .card {
+   margin: 0;
+   text-align: center;
+   font-weight: 800;
+}
+
+/* 投票区ラベル（凸包の常時表示） */
+.leaflet-tooltip.hullLabel {
+   background: rgba(0, 0, 0, .55);
+   color: #fff;
+   border: 1px solid rgba(255, 255, 255, .20);
+   border-radius: 10px;
+   padding: 4px 8px;
+   font-weight: 900;
+   font-size: 14px;
+   line-height: 1;
+   box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+}
+
+.leaflet-tooltip.hullLabel:before {
+   display: none;
+   /* 吹き出しの三角を消す（中心表示で邪魔なので） */
+}

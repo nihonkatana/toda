@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>道</title>
+
+    <style>
+        :root {
+            --ink: #111;
+            --paper: #fff;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        /* 画面全体を「紙」っぽく中央に */
+        .wrap {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 22px 14px 24px;
+            box-sizing: border-box;
+        }
+
+        /*
+      タイトル・本文 共通フォント
+      Web標準で最も「墨感」が出る現実解
+    */
+        .calligraphy {
+            font-family:
+                "Hiragino Mincho ProN",
+                "Hiragino Mincho Pro",
+                "YuMincho",
+                "Yu Mincho",
+                "MS Mincho",
+                serif;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        /* 縦書き（右 → 左） */
+        .tategaki {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            line-height: 1.85;
+            /* 行間（列間）を広めに */
+            font-size: clamp(18px, 4.2vw, 28px);
+            padding: 8px 6px;
+            max-height: 70vh;
+            overflow: visible;
+        }
+
+        /* タイトル：「道」 */
+        .title {
+            font-size: clamp(56px, 11vw, 96px);
+            line-height: 1;
+            margin: 2px 0 20px;
+        }
+
+        /* 本文 */
+        .body {
+            margin: 0;
+        }
+
+        /* 墨のにじみ・かすれ表現（控えめ） */
+        .ink {
+            text-shadow:
+                0.8px 0.6px 0 rgba(0, 0, 0, 0.25),
+                -0.5px 0.2px 0 rgba(0, 0, 0, 0.12);
+        }
+
+        /* 挿絵（本文の下） */
+        .illust {
+            margin-top: 0px;
+            /* 本文との間隔を詰める */
+            width: min(420px, 72vw);
+            height: auto;
+            display: block;
+            filter: grayscale(100%);
+        }
+
+        /* 画面高さが低い端末用 */
+        @media (max-height: 720px) {
+            .tategaki {
+                max-height: 62vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap calligraphy">
+        <!-- タイトル -->
+        <div class="tategaki ink title">道</div>
+
+        <!-- 本文（指定改行どおり） -->
+        <div class="tategaki ink body" aria-label="道の言葉">
+            この道を行けばどうなるものか<br>
+            危ぶむなかれ<br>
+            危ぶめば道はなし<br>
+            踏み出せばその一足が道となり<br>
+            その一足が道となる<br>
+            迷わず行けよ 行けば分かるさ
+        </div>
+
+        <!-- 挿絵 -->
+        <img class="illust" src="./image/inoki-like.png" alt="">
+    </div>
+</body>
+
+</html>

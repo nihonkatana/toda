@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>掲示場ナビ（川口市）道</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./tweaks.css">
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="row space" id="precinctDetailHeader">
+      <div class="left">
+        <img class="nav-logo" src="./image/nav_logo_master_1024.png" alt="掲示場ナビ" />
+        <div class="title">掲示場ナビ（川口市）道</div>
+      </div>
+      <div class="row" style="gap:8px">
+        <span id="rolePill" class="pill">未ログイン</span>
+        <button class="btn small ghost" onclick="app.openSettings()">⚙️</button>
+      </div>
+    </div>
+
+    <div class="row space" style="margin-top:10px">
+      <div class="kpi">
+        <span class="pill" id="userPill">ユーザー：-</span>
+        <span class="pill" id="modePill">移動：車</span>
+      </div>
+      <button class="btn small" onclick="app.reload()">更新</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <div class="card">
+      <div id="toastText"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- AUTH / REGISTER -->
+    <div id="authView" class="card" style="display:none">
+      <div class="h2">はじめに</div>
+      <div class="muted" style="font-size:15px;line-height:1.55">
+        掲示場ナビは、ブラウザー推奨です。AndroidはChrome, iPhoneはSafali にリンクを貼り付けて開いてください。<br>
+        あらかじめ担当の投票区とその中の掲示場が割り当てられています。
+      </div>
+<!--
+      <div style="margin-top:16px"></div>
+      <div class="h2">初回登録</div>
+      <div class="muted" style="font-size:15px;line-height:1.55">
+        ニックネームと識別名を登録してください。<br>
+        識別名は、LINE表示名がある方はその表示名、LINEがない方はメンバーが識別できる名前を入力してください。<br>
+        初回登録後、責任者が承認すると利用開始できます。登録したことを責任者にご連絡ください。<br>
+      </div>
+-->
+      <div style="margin-top:16px"></div>
+      <div class="h2">ログイン</div>
+      <div class="muted" style="font-size:15px;line-height:1.55">
+        担当表に記載のログインIDとパスワードを入力してください。<br>
+        一度ログインした後、ログアウトしない限り毎回ログインする必要はありません。
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="h3">ログイン（必須）</div>
+        <input id="inNick" class="field" placeholder="例：じょーかー" />
+      </div>
+      <div style="margin-top:12px">
+        <div class="h3">パスワード（必須）</div>
+        <input id="inIdName" class="field" placeholder="例：Joker" />
+      </div>
+
+      <div class="sep"></div>
+      <button class="btn primary block" onclick="app.register()">ログイン</button>
+
+      <div class="tiny" style="margin-top:12px">
+        ログインできない場合は、LINEグループのMoto3に連絡してください。
+      </div>
+    </div>
+
+    <!-- PENDING (waiting approval) -->
+    <div id="pendingView" class="card" style="display:none">
+      <div class="h2">承認待ち</div>
+      <div class="muted" style="font-size:13px;line-height:1.6">
+        いまは <b>承認待ち</b> です。責任者が承認すると利用できます。<br>
+        しばらくしてから「更新」を押してください。
+      </div>
+      <div class="sep"></div>
+      <button class="btn primary block" onclick="app.reload()">更新する</button>
+      <div class="tiny" style="margin-top:10px">
+        ※承認が必要な場合は、責任者へ「ニックネーム」と「識別名」を連絡してください。
+      </div>
+    </div>
+
+
+
+<!-- FIELD -->
+    <div id="fieldView">
+      <div id="fieldTopAnchor"></div>
+      <div class="card">
+        <div class="row space">
+          <div id="precHeader">
+            <div class="h2">担当投票区</div>
+            <div class="muted" style="font-size:15px">割当された投票区のみ表示されます。<br>
+              デフォルトの移動手段は「車」に設定されています。<br>
+            </div>
+          </div>
+          <button class="btn small" onclick="app.openTravelModePicker()">移動手段</button>
+        </div>
+
+        <div class="sep"></div>
+        <div class="h3" id="fieldOverviewTitle" style="margin-top:10px">担当投票区 全体マップ</div>
+        <div class="muted" style="font-size:12px;line-height:1.5">
+          青枠があなたの担当投票区です。タップするとその投票区を開きます。
+        </div>
+        <div id="fieldOverviewMap"
+          style="height: 42vh; min-height: 280px; border-radius: 16px; overflow:hidden; border:1px solid rgba(255,255,255,.12); margin-top:10px;">
+        </div>
+        
+        <div class="sep"></div>
+
+        <div id="precinctList" class="list"></div>
+      </div>
+
+      <!-- Precinct Detail -->
+      <div id="precinctDetail" class="card" style="display:none">
+        <div class="row space">
+          <div id="precinctDetailAnchor">
+            <div class="h2" id="precTitle">投票区</div>
+            <div class="muted" id="precSub" style="font-size:15px"></div>
+            <div id="precNote" class="muted small" style="margin-top:6px;"></div>
+          </div>
+          <button class="btn small ghost" onclick="app.closePrecinct()">全体マップへ戻る</button>
+        </div>
+
+        <!-- Map (Leaflet) only here -->
+        <div id="precinctMapAnchor"></div>
+        <div id="mapWrap" style="margin-top:12px">
+          <div id="map"></div>
+          <div class="mapHint">
+            地図のピンをタップすると、その地点の操作ができます（単点ナビ／済／未に戻す／メモ）。
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="grid2">
+          <button class="btn primary block" onclick="app.startNavRecommended()">次の1地点ナビ（未の先頭）</button>
+          <button class="btn block" onclick="app.pickNextPoint()">次点を選ぶ</button>
+        </div>
+
+        <div class="tiny" style="margin-top:10px">
+          ナビマップの順番は、「次点を選ぶ」で指定しない限り、未訪問の掲示場の設置番号順となります。<br>
+          「単点ナビ」は現在地からその掲示場までのルート地図が開きます。<br><br>
+          ポスターを貼り終えた掲示場は、「済」ボタンを押してください。しばらくすると（未）バッジが（済）に変わります。<br>
+        </div>
+
+        <div class="sep"></div>
+        <div id="pointList" class="list"></div>
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div id="sumView" style="display:none">
+      <div class="card">
+        <div class="row space">
+          <div>
+            <div class="h2">集計（全体）</div>
+            <div class="tiny">投票区と状態（未/済）で絞り込み（AND）できます。メモも表示します。</div>
+          </div>
+          <button class="btn small" onclick="app.loadSummary()">再読込</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="h3">絞り込み</div>
+        <div class="grid2">
+          <div>
+            <div class="tiny" style="margin-bottom:6px">投票区</div>
+            <select id="sumArea" class="field" onchange="app.renderSummary()">
+              <option value="">（全投票区）</option>
+            </select>
+          </div>
+          <div>
+            <div class="tiny" style="margin-bottom:6px">状態（AND）</div>
+            <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:2px">
+              <label class="pill" style="display:flex;gap:8px;align-items:center">
+                <input type="checkbox" id="sumTodo" checked />
+                未
+              </label>
+              <label class="pill" style="display:flex;gap:8px;align-items:center">
+                <input type="checkbox" id="sumDone" checked />
+                済
+              </label>
+              <label class="pill" style="display:flex;gap:8px;align-items:center">
+                <input type="checkbox" id="sumMemo" />
+                メモ付
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row space">
+          <div class="kpi">
+            <span class="pill" id="sumKpiTotal">総数：-</span>
+            <span class="pill" id="sumKpiTodo">未：-</span>
+            <span class="pill" id="sumKpiDone">済：-</span>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div id="sumList" class="list"></div>
+
+        <div class="tiny" style="margin-top:12px">
+          ※集計はGAS側に <span class="mono">action:"summary_get"</span> が必要です（未実装の場合は「未対応」と表示されます）。
+        </div>
+      </div>
+    </div>
+
+    <!-- ALLOCATOR -->
+    <div id="allocView" style="display:none">
+      <div class="card">
+        <div class="row space">
+          <div class="h2" style="margin:0">責任者 <span id="pendingBadge" class="badge badgePending" style="display:none;margin-left:6px">0</span></div>
+          <div class="right" style="flex-wrap:wrap">
+            <button class="btn small primary" id="btnAllocSubAssign" onclick="app.switchAllocSub('assign')">割当</button>
+            <button class="btn small ghost" id="btnAllocSubAllow" onclick="app.switchAllocSub('allow')">ホワイトリスト</button>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:10px">
+          「割当」と「ホワイトリスト」を切り替えられます。
+        </div>
+      </div>
+
+      <div class="card" id="allocAssignSection">
+        <div class="h2">割当</div>
+        <div class="tiny">
+          複数人同時操作を想定し、投票区ごとに version を持っています。競合した場合は「競合」と表示されます（更新してやり直し）。
+        </div>
+        <div class="sep"></div>
+
+        <div class="h3">担当者検索（users）</div>
+        <input id="inUserSearch" class="field" placeholder="表示名で検索（例：たなか）" oninput="app.renderUserCandidates()" />
+        <div id="userCandidates" class="list" style="margin-top:12px"></div>
+
+        <div class="sep"></div>
+
+        <div class="h3">全体マップ（投票区をタップして選択）</div>
+        <div class="muted" style="font-size:12px;line-height:1.5">
+          青=未割当 / 緑=割当済。ポリゴンをタップすると投票区の選択（チェック）に連動します。
+        </div>
+        <div id="allocMap"
+          style="height: 46vh; min-height: 320px; border-radius: 16px; overflow:hidden; border:1px solid rgba(255,255,255,.12); margin-top:10px;">
+        </div>
+
+        <div class="h3">投票区一覧（97）</div>
+        <div class="tiny" style="margin-bottom:10px">複数選択して一括割当できます。</div>
+
+        <div class="grid2">
+          <button class="btn primary block" onclick="app.bulkAssign()">選択を割当</button>
+          <button class="btn block" style="background:rgba(255,92,92,.18);border:1px solid rgba(255,92,92,.35)"
+            onclick="app.bulkUnassign()">選択を解除</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <input id="inAssignNote" class="field" placeholder="メモ（任意：午前担当/引き継ぎ等）" />
+        </div>
+
+        <div class="sep"></div>
+        <div id="assignList" class="list"></div>
+      </div>
+
+      <div class="card" id="allocPendingSection" style="margin-top:12px">
+        <div class="h2">承認待ちユーザー</div>
+        <div class="muted" style="font-size:12px;line-height:1.5">
+          新規登録は「pending」で仮登録されます。ここで承認すると active になり利用開始できます。
+        </div>
+        <div class="sep"></div>
+        <div id="pendingList" class="list"></div>
+        <div class="tiny" style="margin-top:10px">
+          ※却下は status=rejected にします（再登録は同一ニックネーム＋識別名だと同じ user_id が返ります）。
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs" style="display:none">
+    <div class="tab active" id="tabField" onclick="app.switchTab('field')">現場</div>
+    <div class="tab" id="tabSum" onclick="app.switchTab('sum')">集計</div>
+    <div class="tab" id="tabAlloc" onclick="app.switchTab('alloc')">
+      責任者 <span id="pendingBadge" class="badge badgePending" style="display:none;margin-left:6px;">承認待ち 0</span>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" onclick="if(event.target===this) app.closeSettings()"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.40); z-index:1001;">
+
+    <div style="background:var(--card); border:1px solid rgba(255,255,255,.12); color:var(--text);
+                margin:12vh auto; padding:16px; width:min(92vw,460px); border-radius:18px;">
+      <div class="row space">
+        <div class="h2" style="margin:0;">設定</div>
+        <button class="btn small ghost" onclick="app.closeSettings()">✕</button>
+      </div>
+
+      <div class="sep"></div>
+      <div id="currentUserBox" class="muted"></div>
+
+      <div class="sep"></div>
+      <div class="tiny" style="margin-top:12px">
+        ※端末を他の人と共用する場合のみログアウトしてください。通常は不要です。
+      </div>
+      <button class="btn block" style="background:rgba(255,92,92,.18);border:1px solid rgba(255,92,92,.35)"
+        onclick="app.logout()">
+        この端末からログアウト
+      </button>
+
+      <!--現場マニュアル -->
+      <div class="tiny" style="margin-top:12px">
+        ※困ったときはこちら
+      </div>
+      <button class="btn ghost block" onclick="window.open('manual_field.html','_blank')">
+        📘 現場向け 道
+      </button>
+      <div id="allocatorManualSlot"></div>
+
+    </div>
+  </div>
+
+  <script>
+    /** =========================
+     *  CONFIG
+     * ========================= */
+    const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxS75U51Qsm-ZfrFx6O9s3ofbyjO7EyN4t3lzmnN9lnic9vgksiAsViWGWsYgwkRr1WBQ/exec";
+
+    /** =========================
+     *  STATE
+     * ========================= */
+    const store = {
+      user_id: localStorage.getItem("user_id") || "",
+      display_name: localStorage.getItem("display_name") || "",
+      role: localStorage.getItem("role") || "",
+  user_status: localStorage.getItem("user_status") || "",
+      travel_mode: localStorage.getItem("travel_mode") || "driving", // driving|walking
+      assigned_areas: [],
+      points: [],
+      state: {}, // point_id -> {status,memo}
+      current_area: "",
+  current_tab: localStorage.getItem("current_tab") || "field",
+
+      // allocator caches
+      allUsers: [],
+      assignments: [],
+      selectedAssignee: null,
+      selectedAreas: new Set(),
+
+      allocPointsAll: [],
+      allocMap: null,
+      allocMapLayers: { hulls: null, markers: null },
+      allocAreaPolys: new Map(),
+
+      pendingUsers: [],
+
+      // map
+      map: null,
+      mapMarkers: [],
+      mapArea: "",
+
+      // field map
+      fieldOverviewMap: null,
+      fieldOverviewLayers: { hulls: null },
+
+      // summary cache
+      summary: { ok: false, points: [], state: {} },
+      area_notes: {},
+
+      // 送信中ガード（連打防止）
+      inFlight: new Set(),
+    };
+
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+
+    const ui = {
+      toast: (msg) => {
+        const t = document.getElementById("toast");
+        const tx = document.getElementById("toastText");
+        tx.innerHTML = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2400);
+      },
+
+      setTop: () => {
+        document.getElementById("userPill").textContent = store.display_name ? `ユーザー：${store.display_name}` : "ユーザー：-";
+        const modeLabel = store.travel_mode === "walking" ? "徒歩" : "車";
+        document.getElementById("modePill").textContent = `移動：${modeLabel}`;
+        document.getElementById("rolePill").textContent = store.role ? `role: ${store.role}` : "未ログイン";
+      }
+    };
+
+    /** =========================
+     *  HTTP
+     * ========================= */
+    async function postAction(payload) {
+      if (!GAS_WEBAPP_URL || GAS_WEBAPP_URL.includes("YOUR_GAS_WEBAPP_URL_HERE")) {
+        ui.toast("GAS_WEBAPP_URL を設定してください");
+        throw new Error("Missing GAS_WEBAPP_URL");
+      }
+      const res = await fetch(GAS_WEBAPP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, // preflight回避
+        body: JSON.stringify(payload),
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch { throw new Error("Bad JSON response: " + text.slice(0, 200)); }
+      return data;
+    }
+
+    /** =========================
+     *  SAFE HTML
+     * ========================= */
+    function escapeHtml_(s) {
+      s = String(s ?? "");
+      return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
+    }
+
+    function cssEscape_(s) {
+      s = String(s ?? "");
+      if (window.CSS && CSS.escape) return CSS.escape(s);
+      return s.replace(/["\\#.;?+*~':!^$[\]()=>|/@]/g, "\\$&");
+    }
+
+    function setBusyForPoint_(point_id, busy, clickedBtn) {
+      const pid = String(point_id || "");
+      if (!pid) return;
+
+      const sel = `[data-pid="${cssEscape_(pid)}"]`;
+      const btns = document.querySelectorAll(sel);
+
+      btns.forEach(b => {
+        if (!(b instanceof HTMLElement)) return;
+        b.disabled = !!busy;
+        b.setAttribute("aria-busy", busy ? "true" : "false");
+        b.classList.toggle("is-busy", !!busy);
+      });
+
+      if (clickedBtn && clickedBtn instanceof HTMLElement) {
+        if (busy) {
+          clickedBtn.dataset.prevText = clickedBtn.textContent || "";
+          clickedBtn.textContent = "保存中…";
+        } else {
+          const prev = clickedBtn.dataset.prevText;
+          if (prev != null) clickedBtn.textContent = prev;
+          delete clickedBtn.dataset.prevText;
+        }
+      }
+    }
+
+    function computeAreaKpi_(areaId) {
+      const pts = store.points.filter(p => p.area_id === areaId);
+      const total = pts.length;
+      const todo = pts.filter(p => (store.state[p.point_id]?.status || "todo") === "todo").length;
+      const done = pts.filter(p => (store.state[p.point_id]?.status || "todo") === "done").length;
+      return { total, todo, done };
+    }
+
+    function updatePrecinctHeader_(areaId) {
+      if (!areaId) return;
+      const { total, todo, done } = computeAreaKpi_(areaId);
+      const num = String(areaId).replace(/^P0*/, "");
+      const sub = document.getElementById("precSub");
+      const title = document.getElementById("precTitle");
+      if (title) title.textContent = `投票区：${num}`;
+      if (sub) sub.textContent =
+        `地点：${total} / 未：${todo} / 済：${done} / 移動：${store.travel_mode === "walking" ? "徒歩" : "車"}`;
+
+      const noteEl = document.getElementById("precNote");
+      if (noteEl) {
+        const note = (store.area_notes && store.area_notes[areaId]) ? String(store.area_notes[areaId]) : "";
+        noteEl.textContent = note ? `引継ぎメモ：${note}` : "";
+        noteEl.style.display = note ? "block" : "none";
+      }
+    }
+
+    function scrollToAnchor_(elOrId) {
+      const el = (typeof elOrId === "string") ? document.getElementById(elOrId) : elOrId;
+      if (!el) return;
+
+      // 画面上部の固定ヘッダー分のオフセット
+      const topbar = document.querySelector(".topbar");
+      const offset = (topbar ? topbar.offsetHeight : 0) + 10;
+
+      // display切替直後はレイアウトが未確定なことがあるので2拍待つ
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const rect = el.getBoundingClientRect();
+          const y = window.pageYOffset + rect.top - offset;
+          window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        }, 50);
+      });
+    }
+
+    /** =========================
+     *  MAP URLS
+     * ========================= */
+    function encodeLoc(lat, lng) {
+      return `${Number(lat).toFixed(7)},${Number(lng).toFixed(7)}`;
+    }
+
+    function buildSingleNavUrl(lat, lng, travelMode) {
+      const t = (travelMode === "walking") ? "w" : "d";
+      if (isIOS()) {
+        return `https://maps.apple.com/?daddr=${encodeURIComponent(encodeLoc(lat, lng))}&dirflg=${t}`;
+      }
+      return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(encodeLoc(lat, lng))}&travelmode=${encodeURIComponent(travelMode || "driving")}`;
+    }
+
+    function openNavInNewTab(url) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    /** =========================
+     *  LEAFLET ICON
+     * ========================= */
+    function markerIcon_(status) {
+      const cls = (status === "done") ? "done" : "todo";
+      return L.divIcon({
+        className: "",
+        html: `<div class="leaf-dot-wrap"><div class="leaf-dot ${cls}"></div></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -8],
+      });
+    }
+
+    /** =========================
+     *  BADGE
+     * ========================= */
+    function statusBadge(status) {
+      if (status === "done") return `<span class="badge bDone">済</span>`;
+      return `<span class="badge bTodo">未</span>`;
+    }
+
+    /** =========================
+     *  APP
+     * ========================= */
+    const app = {
+      async init() {
+        ui.setTop();
+        setTimeout(() => {
+          document.getElementById("sumTodo")?.addEventListener("change", () => app.renderSummary());
+          document.getElementById("sumDone")?.addEventListener("change", () => app.renderSummary());
+          document.getElementById("sumMemo")?.addEventListener("change", () => app.renderSummary());
+        }, 0);
+
+        if (!store.user_id) {
+          app.showAuth();
+          return;
+        }
+        await app.bootstrap();
+      },
+
+      showAuth() {
+        document.getElementById("authView").style.display = "block";
+    document.getElementById("pendingView").style.display = "none";
+        document.getElementById("fieldView").style.display = "none";
+        document.getElementById("sumView").style.display = "none";
+        document.getElementById("allocView").style.display = "none";
+        document.getElementById("tabs").style.display = "none";
+      }
+,
+
+  showPending(){
+    document.getElementById("authView").style.display = "none";
+    document.getElementById("pendingView").style.display = "none";
+    document.getElementById("fieldView").style.display = "none";
+    document.getElementById("allocView").style.display = "none";
+    document.getElementById("tabs").style.display = "none";
+    document.getElementById("pendingView").style.display = "block";
+  }
+,
+
+  async register() {
+        const nickname = document.getElementById("inNick").value.trim();
+        const id_name = document.getElementById("inIdName").value.trim();
+        if (!nickname || !id_name) { ui.toast("必須項目を入力してください"); return; }
+
+        ui.toast("ログイン中…");
+        const data = await postAction({ action: "register", nickname, id_name });
+        if (!data.ok) {
+          if (data.error === "NOT_ALLOWED") ui.toast("ログインできません（ホワイトリスト未登録）");
+          else ui.toast("失敗：" + (data.error || "不明"));
+          return;
+        }
+
+        store.user_id = data.user.user_id;
+        store.display_name = data.user.display_name;
+        store.role = data.user.role;
+    store.user_status = data.user.status || "active";
+
+        localStorage.setItem("user_id", store.user_id);
+        localStorage.setItem("display_name", store.display_name);
+        localStorage.setItem("role", store.role);
+    localStorage.setItem("user_status", store.user_status);
+    localStorage.setItem("user_status", store.user_status);
+        localStorage.setItem("travel_mode", store.travel_mode);
+
+        ui.setTop();
+        await app.bootstrap();
+      },
+
+      async bootstrap() {
+        ui.toast("読み込み中…");
+        const data = await postAction({ action: "bootstrap", user_id: store.user_id });
+        if (!data.ok) {
+          ui.toast("認証エラー。ログアウトします");
+          app.logout();
+          return;
+        }
+
+        store.display_name = data.user.display_name || store.display_name;
+        store.role = data.user.role || store.role;
+    store.user_status = data.user.status || store.user_status || "active";
+        localStorage.setItem("display_name", store.display_name);
+        localStorage.setItem("role", store.role);
+    localStorage.setItem("user_status", store.user_status);
+
+        store.assigned_areas = data.assigned_areas || [];
+        store.points = data.points || [];
+        store.state = data.state || {};
+        store.area_notes = data.area_notes || {};
+
+        ui.setTop();
+
+        document.getElementById("tabs").style.display = "flex";
+        const canAlloc = (store.role === "allocator" || store.role === "planner");
+        document.getElementById("tabAlloc").style.display = canAlloc ? "block" : "none";
+
+        // default tab（固定しない）
+        // - planner/allocator は「責任者タブを維持」しやすいように、前回タブを優先
+        // - field は常に現場
+        const lastTab = localStorage.getItem("last_tab") || ""; // "field" or "alloc"
+
+        let firstTab = "field";
+        if (canAlloc && lastTab === "alloc") firstTab = "alloc";
+
+        app.switchTab(firstTab);
+        app.renderPrecinctList();
+
+        app.renderFieldOverviewMap_();
+      },
+
+      async reload() {
+        if (!store.user_id) { app.showAuth(); return; }
+        await app.bootstrap();
+        if (document.getElementById("tabSum").classList.contains("active")) {
+          await app.loadSummary();
+        }
+        if ((store.role === "allocator" || store.role === "planner") && document.getElementById("tabAlloc").classList.contains("active")) {
+          await app.loadAllocatorData();
+        }
+      },
+
+      logout() {
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("display_name");
+        localStorage.removeItem("role");
+        store.user_id = "";
+        store.display_name = "";
+        store.role = "";
+        store.assigned_areas = [];
+        store.points = [];
+        store.state = {};
+        store.current_area = "";
+        store.summary = { ok: false, points: [], state: {} };
+        ui.setTop();
+        app.closeSettings();
+        app.showAuth();
+      },
+
+      closeSettings() {
+        const modal = document.getElementById("settingsModal");
+        if (modal) modal.style.display = "none";
+      },
+
+      switchTab(which) {
+        store.current_tab = which;
+        localStorage.setItem("last_tab", which); // ← これだけ残す
+
+        document.getElementById("tabField").classList.toggle("active", which === "field");
+        document.getElementById("tabSum").classList.toggle("active", which === "sum");
+        document.getElementById("tabAlloc").classList.toggle("active", which === "alloc");
+
+        document.getElementById("fieldView").style.display = which === "field" ? "block" : "none";
+        document.getElementById("sumView").style.display = which === "sum" ? "block" : "none";
+        document.getElementById("allocView").style.display = which === "alloc" ? "block" : "none";
+        document.getElementById("authView").style.display = "none";
+        document.getElementById("pendingView").style.display = "none";
+
+        if (which === "sum") {
+          app.loadSummary().catch(err => ui.toast("集計取得に失敗：" + err.message));
+        }
+
+        if (which === "alloc") {
+          if (!(store.role === "allocator" || store.role === "planner")) {
+            ui.toast("権限がありません");
+            app.switchTab("field");
+            return;
+          }
+          app.switchAllocSub("assign");
+          app.loadAllocatorData().catch(err => ui.toast("割当データ取得に失敗：" + err.message));
+        }
+      },
+
+      switchAllocSub(which) {
+        const isAssign = (which === "assign");
+        const secAssign = document.getElementById("allocAssignSection");
+        const secAllow = document.getElementById("allocAllowSection");
+        const btnAssign = document.getElementById("btnAllocSubAssign");
+        const btnAllow = document.getElementById("btnAllocSubAllow");
+
+        if (secAssign) secAssign.style.display = isAssign ? "block" : "none";
+        if (secAllow) secAllow.style.display = isAssign ? "none" : "block";
+
+        if (btnAssign && btnAllow) {
+          btnAssign.classList.toggle("primary", isAssign);
+          btnAssign.classList.toggle("ghost", !isAssign);
+          btnAllow.classList.toggle("primary", !isAssign);
+          btnAllow.classList.toggle("ghost", isAssign);
+        }
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      },
+
+      openSettings() {
+        const box = document.getElementById("currentUserBox");
+        if (box) {
+          box.textContent = store.user_id ? `ログイン中：${store.display_name}（${store.role}）` : "未ログイン";
+        }
+       
+        //管理者マニュアル：
+        const slot = document.getElementById("allocatorManualSlot");
+        if (slot) {
+          const canAlloc = (store.role === "allocator" || store.role === "planner");
+          slot.innerHTML = "";
+          if (canAlloc) {
+            const btn = document.createElement("button");
+            btn.className = "btn ghost block";
+            btn.textContent = "📙 掲示場の割当説明と割当マップ";
+            btn.onclick = () => window.open("brief.html", "_blank");
+            slot.appendChild(btn);
+          }
+        }
+
+        document.getElementById("settingsModal").style.display = "block";
+      },
+
+      openTravelModePicker() {
+        const current = store.travel_mode;
+        const msg = `移動手段を入力してください（D=車 / W=徒歩）\n\n` +
+          `${current === "driving" ? "●" : "○"} D 車\n` +
+          `${current === "walking" ? "●" : "○"} W 徒歩`;
+        const chosen = prompt(msg, current === "walking" ? "W" : "D");
+        if (!chosen) return;
+        const v = chosen.trim().toUpperCase();
+        if (!["D", "W"].includes(v)) { ui.toast("入力が正しくありません"); return; }
+        store.travel_mode = (v === "W") ? "walking" : "driving";
+        localStorage.setItem("travel_mode", store.travel_mode);
+        ui.setTop();
+        ui.toast("移動手段を変更しました");
+      },
+
+      /** -------- Field: precinct list/detail -------- */
+      renderPrecinctList() {
+        const el = document.getElementById("precinctList");
+        el.innerHTML = "";
+
+        
+
+    // pending user: show message first
+    if (store.user_status === "pending") {
+      el.innerHTML = `
+        <div class="item">
+          <div class="itemTitle">承認待ち</div>
+          <div class="itemSub">責任者が承認するまで、現場機能は使えません。しばらくお待ちください。</div>
+        </div>`;
+      return;
+    }
+if (!store.assigned_areas || store.assigned_areas.length === 0) {
+          el.innerHTML = `
+            <div class="item">
+              <div style="font-weight:1000;font-size:16px">割当なし</div>
+              <div class="tiny">責任者が投票区を割り当てるまで、ここには表示されません。</div>
+            </div>`;
+          return;
+        }
+
+        const pointsByArea = new Map();
+        for (const p of store.points) {
+          if (!pointsByArea.has(p.area_id)) pointsByArea.set(p.area_id, []);
+          pointsByArea.get(p.area_id).push(p);
+        }
+
+        const sortedAreas = store.assigned_areas.slice().sort();
+        for (const area of sortedAreas) {
+          const pts = (pointsByArea.get(area) || []).slice().sort((a, b) => a.order_reco - b.order_reco || a.point_id.localeCompare(b.point_id));
+          const total = pts.length;
+          const todo = pts.filter(x => (store.state[x.point_id]?.status || "todo") === "todo").length;
+          const done = pts.filter(x => (store.state[x.point_id]?.status || "todo") === "done").length;
+
+          const num = area.replace(/^P0*/, "");
+          const item = document.createElement("div");
+          item.className = "item";
+          item.innerHTML = `
+            <div class="itemTop">
+              <div>
+                <div style="font-weight:1000;font-size:18px;line-height:1.25">投票区：${escapeHtml_(num)}</div>
+                <div class="tiny">地点：${total} / 未：${todo} / 済：${done}</div>
+              </div>
+              <div class="row" style="gap:8px">
+                <button class="btn small primary">開く</button>
+              </div>
+            </div>
+          `;
+          item.querySelector("button").onclick = () => app.openPrecinct(area, { keepScroll: false });
+          el.appendChild(item);
+        }
+      },
+
+      openPrecinct(areaId, opts = {}) {
+        store.current_area = areaId;
+        document.getElementById("precinctDetail").style.display = "block";
+
+        // map
+        document.getElementById("mapWrap").style.display = "block";
+        app.renderMapForArea_(areaId);
+
+        // list
+        app.renderPointList_(areaId);
+
+        updatePrecinctHeader_(areaId);
+        // 「投票区：N / 地点：...」のテキストが見える位置へスクロール（仕様）
+        scrollToAnchor_("precinctDetailAnchor");
+
+        // Leafletは表示直後にサイズ計算がズレることがあるので保険
+        setTimeout(() => { try { store.map?.invalidateSize(); } catch (e) { } }, 80);
+      },
+
+      closePrecinct() {
+        store.current_area = "";
+        document.getElementById("precinctDetail").style.display = "none";
+        app.renderPrecinctList();
+
+        // ✅ 現場タブの最上部（担当投票区…の見出し）へ戻す
+        scrollToAnchor_("fieldTopAnchor");
+      },
+
+      renderPointList_(areaId) {
+        const list = document.getElementById("pointList");
+        list.innerHTML = "";
+
+        const pts = store.points
+          .filter(p => p.area_id === areaId)
+          .slice()
+          .sort((a, b) => a.order_reco - b.order_reco || a.point_id.localeCompare(b.point_id));
+
+        for (const p of pts) {
+          const st = store.state[p.point_id]?.status || "todo";
+          const memo = store.state[p.point_id]?.memo || "";
+
+          const item = document.createElement("div");
+          item.className = "item";
+          item.innerHTML = `
+            <div class="pointMeta">
+              #${p.order_reco} / ${escapeHtml_(p.point_id)} ${statusBadge(st)}
+            </div>
+            <div class="pointName">${escapeHtml_((p.name || "").trim())}</div>
+            <div class="pointAddr">${escapeHtml_((p.address || "").trim())}</div>
+            ${memo ? `<div class="pointMemo">📝 ${escapeHtml_(memo)}</div>` : ``}
+
+            <div class="actions">
+              <button class="btn small" data-act="nav"  data-pid="${escapeHtml_(p.point_id)}">単点ナビ</button>
+              <button class="btn small done" data-act="done" data-pid="${escapeHtml_(p.point_id)}">済</button>
+              <button class="btn small todo" data-act="todo" data-pid="${escapeHtml_(p.point_id)}">未に戻す</button>
+              <button class="btn small memo" data-act="memo" data-pid="${escapeHtml_(p.point_id)}">メモ</button>
+            </div>
+          `;
+
+          item.querySelector('[data-act="nav"]').onclick = () => app.startSingleNav(p.point_id);
+          item.querySelector('[data-act="done"]').onclick = (e) => app.handlePointAction("done", p.point_id, e.currentTarget);
+          item.querySelector('[data-act="todo"]').onclick = (e) => app.handlePointAction("todo", p.point_id, e.currentTarget);
+          item.querySelector('[data-act="memo"]').onclick = (e) => app.handlePointAction("memo", p.point_id, e.currentTarget);
+
+          list.appendChild(item);
+        }
+      },
+
+      getTodoPointsInArea_(areaId) {
+        const pts = store.points
+          .filter(p => p.area_id === areaId)
+          .slice()
+          .sort((a, b) => a.order_reco - b.order_reco || a.point_id.localeCompare(b.point_id));
+        return pts.filter(p => (store.state[p.point_id]?.status || "todo") === "todo");
+      },
+
+      async startNavRecommended() {
+        const area = store.current_area;
+        if (!area) { ui.toast("投票区を開いてください"); return; }
+        const todoPts = app.getTodoPointsInArea_(area);
+        if (todoPts.length === 0) { ui.toast("未訪問がありません"); return; }
+        app.startSingleNav(todoPts[0].point_id);
+      },
+
+      async pickNextPoint() {
+        const area = store.current_area;
+        if (!area) { ui.toast("投票区を開いてください"); return; }
+        const todoPts = app.getTodoPointsInArea_(area);
+        if (todoPts.length === 0) { ui.toast("未訪問がありません"); return; }
+
+        const options = todoPts.slice(0, 30)
+          .map(p => `#${p.order_reco} ${p.point_id} ${(p.name || "").slice(0, 18)}`)
+          .join("\n");
+        const input = prompt(
+          "次に行く地点の point_id を入力してください（未訪問から）\n\n候補（先頭30）:\n" + options,
+          todoPts[0].point_id
+        );
+        if (!input) return;
+
+        const pid = input.trim();
+        const hit = todoPts.find(p => p.point_id === pid);
+        if (!hit) { ui.toast("未訪問の point_id を入力してください"); return; }
+        app.startSingleNav(pid);
+      },
+
+      async startSingleNav(point_id) {
+        const p = store.points.find(x => x.point_id === point_id);
+        if (!p) { ui.toast("地点が見つかりません"); return; }
+
+        const url = buildSingleNavUrl(p.lat, p.lng, store.travel_mode);
+
+        // iPhone対策：先に開く
+        openNavInNewTab(url);
+
+        // ログは後で
+        postAction({
+          action: "nav_start",
+          actor_user_id: store.user_id,
+          area_id: p.area_id,
+          included_point_ids: [p.point_id],
+          maps_url: url,
+          client_time: new Date().toISOString()
+        }).catch(() => { });
+      },
+
+      async handlePointAction(action, point_id, clickedBtn) {
+        const p = store.points.find(x => x.point_id === point_id);
+        if (!p) { ui.toast("地点が見つかりません"); return; }
+
+        const pid = String(point_id || "");
+        const inFlightKey = pid;
+
+        if (store.inFlight.has(inFlightKey)) {
+          ui.toast("保存中です…");
+          return;
+        }
+
+        const prev = {
+          status: store.state[pid]?.status || "todo",
+          memo: store.state[pid]?.memo || ""
+        };
+
+        let nextStatus = action;
+        let nextMemo = prev.memo;
+
+        if (action === "memo") {
+          const m = prompt("メモを入力してください", prev.memo);
+          if (m === null) return;
+          nextMemo = m.trim();
+          nextStatus = prev.status;
+        }
+
+        store.inFlight.add(inFlightKey);
+        setBusyForPoint_(pid, true, clickedBtn);
+
+        store.state[pid] = { status: nextStatus, memo: nextMemo };
+        app.renderPointList_(p.area_id);
+        app.updateMapMarker_(pid);
+        updatePrecinctHeader_(p.area_id);
+        ui.toast("保存中…");
+
+        try {
+          const data = await postAction({
+            action: "state_update",
+            actor_user_id: store.user_id,
+            updates: [{
+              point_id: pid,
+              status: nextStatus,
+              memo: nextMemo,
+              client_time: new Date().toISOString()
+            }]
+          });
+
+          if (!data.ok) throw new Error(data.error || "更新失敗");
+          const r = (data.results || []).find(x => x.point_id === pid);
+          if (r && !r.ok) throw new Error(r.error || "更新拒否");
+
+          ui.toast("保存しました");
+        } catch (err) {
+          store.state[pid] = { status: prev.status, memo: prev.memo };
+          app.renderPointList_(p.area_id);
+          app.updateMapMarker_(pid);
+          updatePrecinctHeader_(p.area_id);
+          ui.toast("保存失敗：" + (err?.message || "不明"));
+        } finally {
+          store.inFlight.delete(inFlightKey);
+          setBusyForPoint_(pid, false, clickedBtn);
+        }
+      },
+
+      /** -------- Allocator: overview map (all precinct hulls) -------- */
+      areaLabel_(areaId) {
+        const m = String(areaId || "").match(/(\d+)/);
+        const n = m ? String(parseInt(m[1], 10)) : String(areaId || "");
+        return `投票区：${n}`;
+      },
+
+      groupPointsByArea_(points) {
+        const map = new Map();
+        for (const p of points || []) {
+          const a = String(p.area_id || "");
+          if (!a) continue;
+          if (!map.has(a)) map.set(a, []);
+          map.get(a).push(p);
+        }
+        return map;
+      },
+
+      convexHull_(pts) {
+        const arr = pts
+          .filter(p => isFinite(p.lat) && isFinite(p.lng))
+          .map(p => ({ x: p.lng, y: p.lat, lat: p.lat, lng: p.lng }))
+          .sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
+
+        if (arr.length <= 1) return arr.map(p => ({ lat: p.lat, lng: p.lng }));
+
+        const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+
+        const lower = [];
+        for (const p of arr) {
+          while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+          lower.push(p);
+        }
+        const upper = [];
+        for (let i = arr.length - 1; i >= 0; i--) {
+          const p = arr[i];
+          while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+          upper.push(p);
+        }
+        upper.pop(); lower.pop();
+        return lower.concat(upper).map(p => ({ lat: p.lat, lng: p.lng }));
+      },
+
+      allocStyleForArea_(areaId) {
+        const a = (store.assignments || []).find(x => String(x.area_id) === String(areaId));
+        const assigned = !!(a && a.assignee_user_id);
+        const selected = store.selectedAreas.has(String(areaId));
+
+        const stroke = assigned ? "#00D26A" : "#2F7CFF";
+        return {
+          color: stroke,
+          weight: selected ? 4 : 2,
+          fillColor: stroke,
+          fillOpacity: assigned ? (selected ? 0.26 : 0.18) : (selected ? 0.24 : 0.16),
+        };
+      },
+
+      renderAllocOverviewMap_() {
+        const canAlloc = (store.role === "allocator" || store.role === "planner");
+        if (!canAlloc) return;
+
+        const container = document.getElementById("allocMap");
+        if (!container) return;
+
+        if (!store.allocMap) {
+          store.allocMap = L.map("allocMap", { zoomControl: true });
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+          }).addTo(store.allocMap);
+
+          store.allocMapLayers.hulls = L.layerGroup().addTo(store.allocMap);
+          store.allocMapLayers.markers = L.layerGroup().addTo(store.allocMap);
+        }
+
+        try { store.allocMapLayers.hulls.clearLayers(); } catch (e) { }
+        try { store.allocMapLayers.markers.clearLayers(); } catch (e) { }
+        store.allocAreaPolys = new Map();
+
+        const byArea = app.groupPointsByArea_(store.allocPointsAll || []);
+        const bounds = [];
+
+        for (const [areaId, pts] of byArea.entries()) {
+          const latlngs = pts.map(p => ({ lat: Number(p.lat), lng: Number(p.lng) }))
+            .filter(x => isFinite(x.lat) && isFinite(x.lng));
+          if (latlngs.length === 0) continue;
+
+          const label = app.areaLabel_(areaId);
+
+          if (latlngs.length === 1) {
+            const mk = L.circleMarker([latlngs[0].lat, latlngs[0].lng], {
+              radius: 7,
+              color: app.allocStyleForArea_(areaId).color,
+              weight: 2,
+              fillOpacity: 0.6
+            }).bindTooltip(label, {
+              permanent: true,
+              direction: "top",
+              className: "hullLabel",
+              opacity: 0.95
+            });
+            mk.on("click", () => app.toggleAllocAreaSelection_(areaId));
+            mk.addTo(store.allocMapLayers.markers);
+            store.allocAreaPolys.set(String(areaId), mk);
+            bounds.push([latlngs[0].lat, latlngs[0].lng]);
+            continue;
+          }
+
+          if (latlngs.length === 2) {
+            const line = L.polyline([[latlngs[0].lat, latlngs[0].lng], [latlngs[1].lat, latlngs[1].lng]], app.allocStyleForArea_(areaId))
+              .bindTooltip(label, {
+                permanent: true,
+                direction: "top",
+                className: "hullLabel",
+                opacity: 0.95
+            });
+
+            line.on("click", () => app.toggleAllocAreaSelection_(areaId));
+            line.addTo(store.allocMapLayers.hulls);
+            store.allocAreaPolys.set(String(areaId), line);
+            bounds.push([latlngs[0].lat, latlngs[0].lng], [latlngs[1].lat, latlngs[1].lng]);
+            continue;
+          }
+
+          const hull = app.convexHull_(latlngs).map(p => [p.lat, p.lng]);
+          if (hull.length < 3) continue;
+
+          const poly = L.polygon(hull, app.allocStyleForArea_(areaId))
+            .bindTooltip(label, {
+              permanent: true,
+              direction: "center",
+              className: "hullLabel",
+              opacity: 0.95
+            });
+
+          poly.on("click", () => app.toggleAllocAreaSelection_(areaId));
+          poly.addTo(store.allocMapLayers.hulls);
+          store.allocAreaPolys.set(String(areaId), poly);
+          for (const ll of hull) bounds.push(ll);
+        }
+
+        if (bounds.length > 0) {
+          try { store.allocMap.fitBounds(bounds, { padding: [16, 16] }); } catch (e) { }
+        }
+        setTimeout(() => { try { store.allocMap.invalidateSize(); } catch (e) { } }, 100);
+      },
+
+      toggleAllocAreaSelection_(areaId) {
+        const key = String(areaId);
+        if (store.selectedAreas.has(key)) store.selectedAreas.delete(key);
+        else store.selectedAreas.add(key);
+
+        app.renderAssignments();
+
+        const layer = store.allocAreaPolys.get(key);
+        if (layer && layer.setStyle) {
+          try { layer.setStyle(app.allocStyleForArea_(key)); } catch (e) { }
+        }
+      },
+
+      // Field用Overview Map
+      renderFieldOverviewMap_() {
+        const el = document.getElementById("fieldOverviewMap");
+        if (!el) return;
+
+        const areas = (store.assigned_areas || []).slice();
+        if (areas.length === 0) {
+          el.innerHTML = `<div style="padding:12px" class="muted">割当がありません</div>`;
+          return;
+        }
+
+        if (!store.fieldOverviewMap) {
+          store.fieldOverviewMap = L.map("fieldOverviewMap", { zoomControl: true });
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+          }).addTo(store.fieldOverviewMap);
+
+          store.fieldOverviewLayers.hulls = L.layerGroup().addTo(store.fieldOverviewMap);
+        }
+
+        // クリア
+        try { store.fieldOverviewLayers.hulls.clearLayers(); } catch (e) { }
+
+        const pts = (store.points || []);
+        const byArea = app.groupPointsByArea_(pts);
+
+        const bounds = [];
+        for (const areaId of areas) {
+          const arr = (byArea.get(String(areaId)) || [])
+            .map(p => ({ lat: Number(p.lat), lng: Number(p.lng) }))
+            .filter(x => isFinite(x.lat) && isFinite(x.lng));
+
+          if (arr.length === 0) continue;
+
+          let layer = null;
+
+          if (arr.length === 1) {
+            layer = L.circleMarker([arr[0].lat, arr[0].lng], {
+              radius: 8,
+              color: "#2F7CFF",
+              weight: 2,
+              fillColor: "#2F7CFF",
+              fillOpacity: 0.18,
+            });
+            bounds.push([arr[0].lat, arr[0].lng]);
+
+          } else if (arr.length === 2) {
+            layer = L.polyline([[arr[0].lat, arr[0].lng], [arr[1].lat, arr[1].lng]], {
+              color: "#2F7CFF",
+              weight: 3,
+              opacity: 0.9,
+            });
+            bounds.push([arr[0].lat, arr[0].lng], [arr[1].lat, arr[1].lng]);
+
+          } else {
+            const hull = app.convexHull_(arr).map(p => [p.lat, p.lng]);
+            if (hull.length < 3) continue;
+
+            layer = L.polygon(hull, {
+              color: "#2F7CFF",
+              weight: 3,
+              fillColor: "#2F7CFF",
+              fillOpacity: 0.10,
+            });
+            for (const ll of hull) bounds.push(ll);
+          }
+
+          const label = app.areaLabel_(areaId);
+          layer.bindTooltip(label, {
+            permanent: true,
+            direction: "center",
+            className: "hullLabel",
+            opacity: 0.95
+          });
+
+          // タップで投票区を開く
+          layer.on("click", () => app.openPrecinct(String(areaId)));
+
+          layer.addTo(store.fieldOverviewLayers.hulls);
+        }
+
+        if (bounds.length > 0) {
+          try { store.fieldOverviewMap.fitBounds(bounds, { padding: [16, 16] }); } catch (e) { }
+        }
+        setTimeout(() => { try { store.fieldOverviewMap.invalidateSize(); } catch (e) { } }, 100);
+      },
+
+      /** -------- Leaflet map (field) -------- */
+      clearMap_() {
+        if (!store.map) return;
+        for (const mk of store.mapMarkers) {
+          try { store.map.removeLayer(mk); } catch (e) { }
+        }
+        store.mapMarkers = [];
+      },
+
+      renderMapForArea_(areaId) {
+        const pts = store.points
+          .filter(p => p.area_id === areaId)
+          .slice()
+          .sort((a, b) => a.order_reco - b.order_reco || a.point_id.localeCompare(b.point_id));
+
+        if (!store.map) {
+          store.map = L.map("map", { zoomControl: true });
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+          }).addTo(store.map);
+        }
+
+        if (store.mapArea !== areaId) store.mapArea = areaId;
+
+        app.clearMap_();
+
+        if (pts.length === 0) {
+          store.map.setView([35.0, 139.0], 12);
+          return;
+        }
+
+        const latlngs = [];
+        for (const p of pts) {
+          const lat = Number(p.lat), lng = Number(p.lng);
+          if (!isFinite(lat) || !isFinite(lng)) continue;
+          latlngs.push([lat, lng]);
+        }
+
+        for (const p of pts) {
+          const lat = Number(p.lat), lng = Number(p.lng);
+          if (!isFinite(lat) || !isFinite(lng)) continue;
+
+          const pid = p.point_id;
+          const st = store.state[pid]?.status || "todo";
+          const mk = L.marker([lat, lng], { icon: markerIcon_(st) }).addTo(store.map);
+          mk.__pid = pid;
+
+          const badge = (st === "done") ? "済" : "未";
+          mk.bindPopup(`
+            <div style="min-width:220px">
+              <div style="font-weight:1000;font-size:16px;line-height:1.25">
+                #${p.order_reco} / ${escapeHtml_(pid)}（${badge}）
+              </div>
+              <div style="margin-top:8px;font-size:14px;opacity:.92">${escapeHtml_((p.name || "").trim())}</div>
+              <div style="margin-top:6px;font-size:13px;opacity:.75;white-space:pre-wrap">${escapeHtml_((p.address || "").trim())}</div>
+
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn small" data-mk="nav"  data-pid="${escapeHtml_(pid)}">単点ナビ</button>
+                <button class="btn small done" data-mk="done" data-pid="${escapeHtml_(pid)}">済</button>
+                <button class="btn small todo" data-mk="todo" data-pid="${escapeHtml_(pid)}">未</button>
+                <button class="btn small memo" data-mk="memo" data-pid="${escapeHtml_(pid)}">メモ</button>
+              </div>
+            </div>
+          `);
+
+          mk.on("popupopen", (ev) => {
+            const root = ev.popup.getElement();
+            if (!root) return;
+            const pid2 = root.querySelector("[data-pid]")?.getAttribute("data-pid");
+            if (!pid2) return;
+
+            root.querySelector('[data-mk="nav"]')?.addEventListener("click", () => app.startSingleNav(pid2));
+            root.querySelector('[data-mk="done"]')?.addEventListener("click", (e) => app.handlePointAction("done", pid2, e.currentTarget));
+            root.querySelector('[data-mk="todo"]')?.addEventListener("click", (e) => app.handlePointAction("todo", pid2, e.currentTarget));
+            root.querySelector('[data-mk="memo"]')?.addEventListener("click", (e) => app.handlePointAction("memo", pid2, e.currentTarget));
+          });
+
+          store.mapMarkers.push(mk);
+        }
+
+        if (latlngs.length >= 2) store.map.fitBounds(latlngs, { padding: [20, 20] });
+        else store.map.setView(latlngs[0], 16);
+      },
+
+      updateMapMarker_(point_id) {
+        for (const mk of store.mapMarkers) {
+          if (mk.__pid === point_id) {
+            const st = store.state[point_id]?.status || "todo";
+            mk.setIcon(markerIcon_(st));
+            break;
+          }
+        }
+      },
+
+      /** -------- Summary -------- */
+      async loadSummary() {
+        ui.toast("集計取得中…");
+        const resp = await postAction({ action: "summary_get", actor_user_id: store.user_id });
+        if (!resp.ok) {
+          const el = document.getElementById("sumList");
+          el.innerHTML = `
+            <div class="item">
+              <div style="font-weight:1000;font-size:16px">集計は未対応</div>
+              <div class="tiny">GAS側に action:"summary_get" を実装してください。error=${escapeHtml_(resp.error || "")}</div>
+            </div>`;
+          return;
+        }
+
+        const points = resp.points || [];
+        let state = resp.state || {};
+        if (!state || typeof state !== "object") state = {};
+
+        const pickMemo = (obj) => String(obj?.memo ?? obj?.note ?? obj?.comment ?? obj?.message ?? "");
+        const pickStatus = (obj) => String(obj?.status ?? obj?.st ?? "todo");
+
+        for (const p of points) {
+          const pid = String(p.point_id || "");
+          if (!pid) continue;
+          if (!state[pid] || typeof state[pid] !== "object") state[pid] = {};
+          if (!state[pid].status) state[pid].status = pickStatus(p);
+          if (!state[pid].memo) state[pid].memo = pickMemo(p);
+        }
+        for (const pid of Object.keys(state)) {
+          state[pid].status = pickStatus(state[pid]);
+          state[pid].memo = pickMemo(state[pid]);
+        }
+
+        store.summary = { ok: true, points, state };
+
+        const sel = document.getElementById("sumArea");
+        const areas = Array.from(new Set(points.map(p => String(p.area_id || "")))).filter(Boolean).sort();
+        const cur = sel.value || "";
+        sel.innerHTML = `<option value="">（全投票区）</option>` + areas.map(a => {
+          const num = a.replace(/^P0*/, "");
+          return `<option value="${escapeHtml_(a)}">投票区：${escapeHtml_(num)}</option>`;
+        }).join("");
+        sel.value = cur;
+
+        app.renderSummary();
+        ui.toast("集計を更新しました");
+      },
+
+      renderSummary() {
+        if (!store.summary.ok) return;
+
+        const area = (document.getElementById("sumArea")?.value || "").trim();
+        const wantTodo = document.getElementById("sumTodo")?.checked ?? true;
+        const wantDone = document.getElementById("sumDone")?.checked ?? true;
+        const wantMemo = document.getElementById("sumMemo")?.checked ?? false;
+
+        function matchStatus(st) {
+          if (wantTodo && wantDone) return true;
+          if (!wantTodo && !wantDone) return true;
+          if (wantTodo && st !== "done") return true;
+          if (wantDone && st === "done") return true;
+          return false;
+        }
+
+        const pts = (store.summary.points || [])
+          .map(p => {
+            const pid = String(p.point_id || "");
+            const st = String(store.summary.state?.[pid]?.status || "todo");
+            const memo = String(store.summary.state?.[pid]?.memo || "").trim();
+            return { ...p, status: st, memo };
+          })
+          .filter(p => !area || String(p.area_id) === area)
+          .filter(p => matchStatus(String(p.status || "todo")))
+          .filter(p => !wantMemo || !!String(p.memo || "").trim())
+          .slice()
+          .sort((a, b) => String(a.area_id).localeCompare(String(b.area_id)) || Number(a.order_reco || 0) - Number(b.order_reco || 0) || String(a.point_id).localeCompare(String(b.point_id)));
+
+        const all = (store.summary.points || []).map(p => String(store.summary.state?.[String(p.point_id || "")]?.status || "todo"));
+        const kTotal = all.length;
+        const kDone = all.filter(s => s === "done").length;
+        const kTodo = kTotal - kDone;
+        document.getElementById("sumKpiTotal").textContent = `総数：${kTotal}`;
+        document.getElementById("sumKpiTodo").textContent = `未：${kTodo}`;
+        document.getElementById("sumKpiDone").textContent = `済：${kDone}`;
+
+        const el = document.getElementById("sumList");
+        el.innerHTML = "";
+
+        if (pts.length === 0) {
+          el.innerHTML = `<div class="item"><div style="font-weight:1000;font-size:16px">該当なし</div><div class="tiny">絞り込み条件を変えてください。</div></div>`;
+          return;
+        }
+
+        let curArea = "";
+        for (const p of pts) {
+          const a = String(p.area_id || "");
+          if (a !== curArea) {
+            curArea = a;
+            const num = a.replace(/^P0*/, "");
+            const header = document.createElement("div");
+            header.className = "item";
+            header.innerHTML = `<div style="font-weight:1000;font-size:16px">投票区：${escapeHtml_(num)}</div>`;
+            el.appendChild(header);
+          }
+
+          const item = document.createElement("div");
+          item.className = "item";
+          item.innerHTML = `
+            <div class="pointMeta">
+              #${Number(p.order_reco || 0)} / ${escapeHtml_(p.point_id || "")} ${p.status === "done" ? `<span class="badge bDone">済</span>` : `<span class="badge bTodo">未</span>`}
+            </div>
+            <div class="pointName">${escapeHtml_((p.name || "").trim())}</div>
+            <div class="pointAddr">${escapeHtml_((p.address || "").trim())}</div>
+            ${p.memo ? `<div class="pointMemo">📝 ${escapeHtml_(p.memo)}</div>` : ``}
+          `;
+          el.appendChild(item);
+        }
+      },
+
+      /** -------- Allocator -------- */
+      async loadAllocatorData() {
+        const usersResp = await postAction({ action: "alloc_list_users", actor_user_id: store.user_id });
+        const assnResp = await postAction({ action: "alloc_list_assignments", actor_user_id: store.user_id });
+        const pendResp = await postAction({ action: "pending_list", actor_user_id: store.user_id });
+        const ptsResp = await postAction({ action: "alloc_points_all", actor_user_id: store.user_id });
+
+        if (!usersResp.ok || !assnResp.ok || !pendResp.ok) {
+          ui.toast("※GASに alloc_list_users / alloc_list_assignments が必要です");
+          store.allUsers = [];
+          store.assignments = [];
+          store.allocPointsAll = [];
+          app.renderUserCandidates();
+          app.renderAssignments();
+          return;
+        }
+
+        store.allUsers = usersResp.users || [];
+        store.assignments = assnResp.assignments || [];
+        store.pendingUsers = pendResp.pending || [];
+        store.selectedAreas = new Set();
+        app.renderUserCandidates();
+        app.renderAssignments();
+        app.renderPendingList_();
+        app.updatePendingBadge_();
+
+        if (!ptsResp.ok) {
+          ui.toast("※GASに alloc_points_all を追加してください");
+          store.allocPointsAll = [];
+          return;
+        }
+
+        store.allocPointsAll = ptsResp.points || [];
+
+        // ✅ ここで全体マップを描画（←オブジェクト内に実行文を置かない）
+        app.renderAllocOverviewMap_();
+      },
+
+      renderUserCandidates() {
+        const q = (document.getElementById("inUserSearch")?.value || "").trim().toLowerCase();
+        const el = document.getElementById("userCandidates");
+        if (!el) return;
+        el.innerHTML = "";
+
+        const list = store.allUsers
+          .filter(u => (u.status || "active") === "active")
+          .filter(u => (u.role === "field" || u.role === "allocator" || u.role === "planner"))
+          .filter(u => !q || (u.display_name || "").toLowerCase().includes(q))
+          .slice(0, 10);
+
+        if (list.length === 0) {
+          el.innerHTML = `<div class="item"><div style="font-weight:1000;font-size:16px">候補なし</div><div class="tiny">users を取得できていない場合はGAS側の action を確認してください。</div></div>`;
+          return;
+        }
+
+        for (const u of list) {
+          const item = document.createElement("div");
+          item.className = "item";
+          const selected = store.selectedAssignee && store.selectedAssignee.user_id === u.user_id;
+          item.innerHTML = `
+            <div class="itemTop">
+              <div>
+                <div style="font-weight:1000;font-size:16px">${selected ? "✅ " : ""}${escapeHtml_(u.display_name)}</div>
+                <div class="tiny">role: ${escapeHtml_(u.role)} / user_id: <span class="mono">${escapeHtml_(u.user_id)}</span></div>
+              </div>
+              <button class="btn small primary">選択</button>
+            </div>
+          `;
+          item.querySelector("button").onclick = () => {
+            store.selectedAssignee = { user_id: u.user_id, display_name: u.display_name };
+            ui.toast("担当者を選択しました");
+            app.renderUserCandidates();
+          };
+          el.appendChild(item);
+        }
+      },
+
+      renderAssignments() {
+        const el = document.getElementById("assignList");
+        if (!el) return;
+        el.innerHTML = "";
+
+        const list = (store.assignments || []).slice().sort((a, b) => String(a.area_id).localeCompare(String(b.area_id)));
+        for (const a of list) {
+          const area = String(a.area_id || "");
+          const checked = store.selectedAreas.has(area);
+          const num = area.replace(/^P0*/, "");
+          const item = document.createElement("div");
+          item.className = "item";
+          item.innerHTML = `
+            <div class="itemTop">
+              <div>
+                <div style="font-weight:1000;font-size:16px;line-height:1.2">
+                  <input type="checkbox" ${checked ? "checked" : ""} />
+                  <span style="margin-left:8px">投票区：${escapeHtml_(num)}</span>
+                  <span class="badge" style="margin-left:8px">v${Number(a.version || 1)}</span>
+                  <span class="badge" style="margin-left:6px">${escapeHtml_(a.status || "")}</span>
+                </div>
+                <div class="tiny">担当：${escapeHtml_(a.assignee_display_name || "（未割当）")}</div>
+                ${(a.note ? `<div class="tiny muted" style="margin-top:6px;">引継ぎメモ：${escapeHtml_(a.note)}</div>` : "")}
+              </div>
+            </div>
+          `;
+          item.querySelector("input").onchange = (e) => {
+            if (e.target.checked) store.selectedAreas.add(area);
+            else store.selectedAreas.delete(area);
+
+            const layer = store.allocAreaPolys?.get?.(String(area));
+            if (layer && layer.setStyle) {
+              try { layer.setStyle(app.allocStyleForArea_(area)); } catch (err) { }
+            }
+          };
+          el.appendChild(item);
+        }
+      
+      },
+
+      updatePendingBadge_(){
+        const badge = document.getElementById("pendingBadge");
+        if (!badge) return;
+        const n = (store.pendingUsers || []).length;
+        if (n > 0) {
+          badge.style.display = "inline-block";
+          badge.textContent = "承認待ち " + String(n);
+        } else {
+          badge.style.display = "none";
+        }
+      },
+
+      renderPendingList_(){
+        const el = document.getElementById("pendingList");
+        if (!el) return;
+        el.innerHTML = "";
+
+        const list = (store.pendingUsers || []).slice()
+          .sort((a,b)=> String(a.created_at||"").localeCompare(String(b.created_at||"")));
+
+        if (list.length === 0) {
+          el.innerHTML = `<div class="item"><div class="itemTitle">承認待ちなし</div><div class="itemSub muted">新規登録があるとここに表示されます。</div></div>`;
+          return;
+        }
+
+        for (const u of list) {
+          const item = document.createElement("div");
+          item.className = "item";
+          item.innerHTML = `
+            <div class="itemTop">
+              <div>
+                <div class="itemTitle">${escapeHtml_(u.display_name || (u.nickname||""))}</div>
+                <div class="itemSub">nickname: ${escapeHtml_(u.nickname||"")} / id: ${escapeHtml_(u.id_name||"")}</div>
+                <div class="tiny">user_id: <span class="mono">${escapeHtml_(u.user_id||"")}</span> / created: ${escapeHtml_(u.created_at||"-")}</div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn small ok" data-act="approve">承認</button>
+              <button class="btn small danger" data-act="reject">却下</button>
+            </div>
+          `;
+          item.querySelector('button[data-act="approve"]').onclick = async () => {
+            if (!confirm(`承認しますか？
+${u.display_name}`)) return;
+            const resp = await postAction({ action:"pending_approve", actor_user_id: store.user_id, user_id: u.user_id });
+            if (!resp.ok) { ui.toast("承認失敗：" + (resp.error||"")); return; }
+            ui.toast("承認しました");
+            await app.loadAllocatorData();
+          };
+          item.querySelector('button[data-act="reject"]').onclick = async () => {
+            if (!confirm(`却下しますか？
+${u.display_name}`)) return;
+            const resp = await postAction({ action:"pending_reject", actor_user_id: store.user_id, user_id: u.user_id });
+            if (!resp.ok) { ui.toast("却下失敗：" + (resp.error||"")); return; }
+            ui.toast("却下しました");
+            await app.loadAllocatorData();
+          };
+          el.appendChild(item);
+        }
+      },
+
+      async bulkAssign() {
+        if (!store.selectedAssignee) { ui.toast("担当者を選択してください"); return; }
+        if (store.selectedAreas.size === 0) { ui.toast("投票区を選択してください"); return; }
+        const note = (document.getElementById("inAssignNote").value || "").trim();
+
+        const ops = [];
+        for (const area of store.selectedAreas) {
+          const a = store.assignments.find(x => String(x.area_id) === String(area));
+          if (!a) continue;
+          ops.push({
+            area_id: area,
+            action: "assign",
+            assignee_user_id: store.selectedAssignee.user_id,
+            expected_version: Number(a.version),
+            note
+          });
+        }
+
+        const resp = await postAction({ action: "alloc_update", actor_user_id: store.user_id, ops });
+        if (!resp.ok) { ui.toast("割当失敗：" + (resp.error || "")); return; }
+
+        let conflict = 0, ok = 0;
+        for (const r of (resp.results || [])) {
+          if (r.ok) ok++;
+          else if (r.error === "CONFLICT") conflict++;
+        }
+        ui.toast(`割当：成功${ok} / 競合${conflict}`);
+        await app.loadAllocatorData();
+      },
+
+      async bulkUnassign() {
+        if (store.selectedAreas.size === 0) { ui.toast("投票区を選択してください"); return; }
+        const note = (document.getElementById("inAssignNote").value || "").trim();
+
+        const ops = [];
+        for (const area of store.selectedAreas) {
+          const a = store.assignments.find(x => String(x.area_id) === String(area));
+          if (!a) continue;
+          ops.push({
+            area_id: area,
+            action: "unassign",
+            expected_version: Number(a.version),
+            note
+          });
+        }
+
+        const resp = await postAction({ action: "alloc_update", actor_user_id: store.user_id, ops });
+        if (!resp.ok) { ui.toast("解除失敗：" + (resp.error || "")); return; }
+
+        let conflict = 0, ok = 0;
+        for (const r of (resp.results || [])) {
+          if (r.ok) ok++;
+          else if (r.error === "CONFLICT") conflict++;
+        }
+        ui.toast(`解除：成功${ok} / 競合${conflict}`);
+        await app.loadAllocatorData();
+      },
+      async allowlistDisable() {
+        const allow_id = (document.getElementById("alDisableId").value || "").trim();
+        if (!allow_id) { ui.toast("allow_id を入力してください"); return; }
+        const resp = await postAction({ action: "allowlist_disable", actor_user_id: store.user_id, allow_id });
+        if (!resp.ok) { ui.toast("無効化失敗：" + (resp.error || "")); return; }
+        ui.toast("無効化しました");
+        document.getElementById("alDisableId").value = "";
+      }
+    };
+
+    window.app = app;
+    app.init();
+  </script>
+
+</body>
+
+
+</html>

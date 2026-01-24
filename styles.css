@@ -1,0 +1,130 @@
+:root{
+      --bg:#0b0f1a; --card:#121a2b; --muted:#a7b0c0; --text:#eef2ff;
+      --accent:#4f8cff; --line:rgba(255,255,255,.10);
+      --good:#2fe27d; --danger:#ff5c5c;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:var(--text)}
+    a{color:inherit}
+    .wrap{max-width:760px;margin:0 auto;padding:16px 14px 120px}
+    .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(to bottom, rgba(11,15,26,.98), rgba(11,15,26,.85));backdrop-filter: blur(10px);padding:12px 14px;border-bottom:1px solid var(--line)}
+    .row{display:flex;gap:10px;align-items:center}
+    .space{justify-content:space-between}
+    .title{font-size:20px;font-weight:1000;letter-spacing:.02em}
+    .pill{font-size:14px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted)}
+    .btn{border:none;border-radius:14px;padding:14px 16px;font-weight:1000;font-size:16px;background:rgba(255,255,255,.10);color:var(--text);cursor:pointer}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:var(--accent)}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.16)}
+    .btn.small{padding:11px 12px;font-size:15px;border-radius:12px}
+    .btn.block{width:100%}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .muted{color:var(--muted)}
+    .h2{font-size:18px;font-weight:1000;margin:0 0 10px}
+    .h3{font-size:16px;font-weight:1000;margin:0 0 8px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:420px){ .grid2{grid-template-columns:1fr} }
+    .field{width:100%;padding:14px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--text);outline:none;font-size:16px}
+    .field::placeholder{color:rgba(167,176,192,.7)}
+    .sep{height:1px;background:var(--line);margin:14px 0}
+    .list{display:flex;flex-direction:column;gap:12px}
+    .item{padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05)}
+    .itemTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .kpi{display:flex;gap:10px;flex-wrap:wrap}
+    .kpi .pill{background:rgba(255,255,255,.06)}
+    .toast{position:fixed;left:14px;right:14px;top:14px;z-index:100;display:none}
+    .toast.show{display:block}
+    .toast .card{margin:0}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px}
+    .badge{font-size:13px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted);display:inline-block}
+    .bTodo{background:rgba(79,140,255,.18);color:#b8d4ff}
+    .bDone{background:rgba(47,226,125,.18);color:#bfffe0}
+    .tiny{font-size:13px;color:rgba(167,176,192,.90);line-height:1.45}
+
+    /* ✅ ボタン色：済は控えめ（誤認防止） */
+    .btn.done{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:rgba(231,236,255,.90)}
+    .btn.todo{background:rgba(79,140,255,.18);border:1px solid rgba(79,140,255,.35)}
+    .btn.memo{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.12)}
+
+    /* ✅ ここを触れば「#1 1-1 済/未」や住所の文字サイズを調整できます */
+    .pointMeta{
+      font-size:20px;            /* ← #/point_id 行（もっと大きくしたければここ） */
+      font-weight:1000;
+      letter-spacing:.01em;
+      line-height:1.2;
+    }
+    .pointMeta .badge{font-size:14px;padding:6px 10px}
+    .pointName{
+      margin-top:8px;
+      font-size:16px;
+      color:rgba(231,236,255,.92);
+      line-height:1.35;
+      white-space:pre-wrap;
+    }
+    .pointAddr{
+      margin-top:6px;
+      font-size:16px;            /* ← 住所（小さいならここを上げる） */
+      color:var(--muted);
+      line-height:1.45;
+      white-space:pre-wrap;
+    }
+    .pointMemo{
+      margin-top:6px;
+      font-size:14px;
+      color:rgba(231,236,255,.85);
+      white-space:pre-wrap;
+      line-height:1.4;
+    }
+
+    /* Tabs */
+    .tabs{
+      position:fixed;left:0;right:0;bottom:0;
+      background:rgba(18,26,43,.96);
+      backdrop-filter: blur(10px);
+      border-top:1px solid rgba(255,255,255,.12);
+      padding:12px;
+      display:flex;gap:10px;z-index:60
+    }
+    .tab{
+      flex:1;text-align:center;
+      padding:14px;
+      border-radius:16px;
+      font-weight:1000;
+      font-size:15px;
+      color:var(--muted);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      cursor:pointer
+    }
+    .tab.active{
+      color:var(--text);
+      background:rgba(79,140,255,.22);
+      border-color:rgba(79,140,255,.55)
+    }
+
+    /* Leaflet map */
+    #mapWrap{display:none}
+    #map{
+      height: 320px;
+      width: 100%;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+    }
+    .mapHint{
+      margin-top:10px;
+      font-size:14px;
+      color:rgba(167,176,192,.92);
+      line-height:1.45;
+    }
+
+    /* Leaflet: colored dot markers */
+    .leaf-dot {
+      width: 16px; height: 16px; border-radius: 999px;
+      border: 2px solid rgba(255,255,255,.85);
+      box-shadow: 0 6px 14px rgba(0,0,0,.25);
+    }
+    .leaf-dot.todo { background: rgba(79,140,255,.95); }   /* 未：青 */
+    .leaf-dot.done { background: rgba(47,226,125,.95); }   /* 済：緑（状態表示） */
+    .leaf-dot-wrap { width: 16px; height: 16px; }
