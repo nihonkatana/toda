@@ -217,8 +217,8 @@
             <div id="fullUrl" class="mono"></div>
 
             <div class="small">
-                ※ 右上の <span class="pill">︙</span> や <span class="pill">□↑</span> から
-                「Chromeで開く / Safariで開く」が選べることがあります。
+                ※ 右下か右上にある <span class="pill">︙</span> や <span class="pill">□↑</span> から
+                「ブラウザーで開く」が選べることがあります。
             </div>
         </div>
 
@@ -232,8 +232,8 @@
         <div class="ovcard">
             <div class="ovtitle">iPhoneの方へ</div>
             <p class="ovtext">
-                右上の <span class="pill">□↑</span> を押して、<br>
-                <b>「Safariで開く」</b> を選んでください。<br><br>
+                右下か右上にある <span class="pill">︙</span> か <span class="pill">□↑</span>を押して、<br>
+                <b>「ブラウザで開く / Safariで開く」</b> を選んでください。<br><br>
                 うまく出ないときは、下の「URLをコピー」を押して、Safariの上に貼り付けてください。
             </p>
             <a class="bigbtn secondary close" href="javascript:void(0)" id="closeOverlay">閉じる</a>
@@ -290,7 +290,7 @@
                 mainBtn.classList.remove("hidden");
             } else if (isIOS) {
                 deviceLine.textContent = "この端末：iPhone";
-                deviceHint.textContent = "このボタンを押したあと、右上の□↑→「Safariで開く」";
+                deviceHint.textContent = "このボタンを押したあと、<span class="pill">︙</span> や <span class="pill">□↑</span>を「ブラウザー / Safariで開く」";
                 mainBtn.href = navUrl; // 同じWebViewで開くことがあるが、クリックの“きっかけ”が重要
                 mainBtn.textContent = "このボタンを押す";
                 mainBtn.classList.remove("hidden");
