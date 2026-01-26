@@ -48,27 +48,10 @@
     <!-- AUTH / REGISTER -->
     <div id="authView" class="card" style="display:none">
       <div class="h2">はじめに</div>
-
       <div class="muted" style="font-size:15px;line-height:1.55">
-        掲示場ナビは、<b>ブラウザで開く</b>で使ってください。<br>
-        LINEなどのアプリの中で開いている場合は、下の操作をしてください。
+        掲示場ナビは、ブラウザー推奨です。AndroidはChrome, iPhoneはSafali にリンクを貼り付けて開いてください。<br>
+        あらかじめ担当の投票区とその中の掲示場が割り当てられています。
       </div>
-
-      <div class="muted" style="font-size:15px;line-height:1.55">
-        ① 画面右下の <b>「…（点々）」</b> を押す<br>
-        ② <b>「デフォルトのブラウザで開く」</b> を押す
-      </div>
-
-      <div style="margin:24px 0;text-align:center">
-        <img src="./image/open_browser.png" alt="右下の点々を押してブラウザで開く" style="max-width:100%;border-radius:12px">
-      </div>
-
-      <div class="muted" style="font-size:15px;line-height:1.55;margin-top:8px">
-        ※ Android・iPhoneどちらも同じ操作です
-        AndroidはChrome, iPhoneはSafali にリンクを貼り付けて開いてもよいです。
-      </div>
-    </div>
-
 <!--
       <div style="margin-top:16px"></div>
       <div class="h2">初回登録</div>
@@ -78,7 +61,7 @@
         初回登録後、責任者が承認すると利用開始できます。登録したことを責任者にご連絡ください。<br>
       </div>
 -->
-      <div style="margin-top:32px"></div>
+      <div style="margin-top:16px"></div>
       <div class="h2">ログイン</div>
       <div class="muted" style="font-size:15px;line-height:1.55">
         担当表に記載のログインIDとパスワードを入力してください。<br>
@@ -1150,12 +1133,8 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
               color: app.allocStyleForArea_(areaId).color,
               weight: 2,
               fillOpacity: 0.6
-            }).bindTooltip(label, {
-              permanent: true,
-              direction: "top",
-              className: "hullLabel",
-              opacity: 0.95
-            });
+            }).bindTooltip(label, { direction: "top" });
+
             mk.on("click", () => app.toggleAllocAreaSelection_(areaId));
             mk.addTo(store.allocMapLayers.markers);
             store.allocAreaPolys.set(String(areaId), mk);
@@ -1165,12 +1144,7 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
 
           if (latlngs.length === 2) {
             const line = L.polyline([[latlngs[0].lat, latlngs[0].lng], [latlngs[1].lat, latlngs[1].lng]], app.allocStyleForArea_(areaId))
-              .bindTooltip(label, {
-                permanent: true,
-                direction: "top",
-                className: "hullLabel",
-                opacity: 0.95
-            });
+              .bindTooltip(label, { direction: "top" });
 
             line.on("click", () => app.toggleAllocAreaSelection_(areaId));
             line.addTo(store.allocMapLayers.hulls);
@@ -1183,12 +1157,7 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
           if (hull.length < 3) continue;
 
           const poly = L.polygon(hull, app.allocStyleForArea_(areaId))
-            .bindTooltip(label, {
-              permanent: true,
-              direction: "center",
-              className: "hullLabel",
-              opacity: 0.95
-            });
+            .bindTooltip(label, { sticky: true });
 
           poly.on("click", () => app.toggleAllocAreaSelection_(areaId));
           poly.addTo(store.allocMapLayers.hulls);
@@ -1284,12 +1253,7 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
           }
 
           const label = app.areaLabel_(areaId);
-          layer.bindTooltip(label, {
-            permanent: true,
-            direction: "center",
-            className: "hullLabel",
-            opacity: 0.95
-          });
+          layer.bindTooltip(label, { sticky: true });
 
           // タップで投票区を開く
           layer.on("click", () => app.openPrecinct(String(areaId)));
