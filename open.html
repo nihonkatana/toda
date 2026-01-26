@@ -3,337 +3,309 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>掲示場ナビをひらく</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>掲示場ナビを開く</title>
     <style>
         :root {
-            --pad: 18px;
+            --bg: #0b0f14;
+            --panel: #111826;
+            --panel2: #0f1520;
+            --text: #ffffff;
+            --muted: rgba(255, 255, 255, .75);
+            --muted2: rgba(255, 255, 255, .6);
+            --accent: #3aa0ff;
+            --accent2: #2f7fe0;
+            --warn: #ffcc66;
+            --border: rgba(255, 255, 255, .12);
+            --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+            --radius: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            background: #fff;
-            color: #111;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(1200px 600px at 30% -10%, #1d2b45 0%, rgba(29, 43, 69, 0) 60%),
+                radial-gradient(900px 600px at 110% 0%, #2a2a52 0%, rgba(42, 42, 82, 0) 55%),
+                var(--bg);
+            color: var(--text);
+            line-height: 1.5;
         }
 
         .wrap {
             max-width: 720px;
             margin: 0 auto;
-            padding: 20px var(--pad) 30px;
-        }
-
-        .title {
-            font-weight: 900;
-            line-height: 1.2;
-            font-size: 30px;
-            margin: 6px 0 10px;
-        }
-
-        .sub {
-            font-size: 18px;
-            line-height: 1.5;
-            margin: 0 0 14px;
-            color: #111;
+            padding: 18px 14px 26px;
         }
 
         .card {
-            border: 2px solid #e5e5e5;
+            background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 16px;
+        }
+
+        .title {
+            font-weight: 800;
+            font-size: 26px;
+            letter-spacing: .02em;
+            margin: 6px 0 8px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--muted);
+            margin: 0 0 14px;
+        }
+
+        .bigStep {
+            margin: 12px 0 14px;
+            padding: 14px 14px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, .03);
+        }
+
+        .stepRow {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin: 10px 0;
+        }
+
+        .num {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            background: rgba(58, 160, 255, .16);
+            border: 1px solid rgba(58, 160, 255, .35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            flex: 0 0 auto;
+        }
+
+        .stepText {
+            font-size: 20px;
+        }
+
+        .stepText small {
+            display: block;
+            margin-top: 3px;
+            color: var(--muted2);
+            font-size: 16px;
+        }
+
+        .cta {
+            display: block;
+            width: 100%;
+            border: 0;
             border-radius: 18px;
-            padding: 14px;
-            margin: 14px 0;
+            padding: 16px 14px;
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(180deg, var(--accent) 0%, var(--accent2) 100%);
+            box-shadow: 0 10px 24px rgba(58, 160, 255, .25);
+            cursor: pointer;
+            margin: 14px 0 10px;
+        }
+
+        .cta:active {
+            transform: translateY(1px);
+        }
+
+        .note {
+            margin-top: 10px;
+            padding: 12px 12px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .03);
+            color: var(--muted);
+            font-size: 17px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: .02em;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .04);
+            color: var(--muted);
+            margin-bottom: 10px;
         }
 
         .warn {
-            border-color: #bfe6bf;
-            background: #f3fff3;
-        }
-
-        .device {
-            font-size: 18px;
-            font-weight: 900;
-            margin: 0 0 6px;
-        }
-
-        .hint {
-            font-size: 16px;
-            line-height: 1.6;
-            margin: 0;
-            color: #222;
-        }
-
-        .bigbtn {
-            display: block;
-            width: 100%;
-            padding: 18px 14px;
-            border-radius: 18px;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 24px;
-            border: 2px solid #111;
-            background: #111;
-            color: #fff;
-            box-sizing: border-box;
-            margin: 12px 0;
-        }
-
-        .bigbtn.secondary {
-            background: #fff;
-            color: #111;
-        }
-
-        .sectionTitle {
-            font-size: 20px;
-            font-weight: 900;
-            margin: 2px 0 8px;
-        }
-
-        .steps {
-            margin: 0;
-            padding-left: 22px;
-            font-size: 18px;
-            line-height: 1.75;
-        }
-
-        .steps li {
-            margin: 6px 0;
-        }
-
-        .pill {
-            display: inline-block;
-            padding: 2px 10px;
-            border: 2px solid #ccc;
-            border-radius: 999px;
-            background: #f7f7f7;
+            color: var(--warn);
             font-weight: 800;
         }
 
-        .small {
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, .5);
             font-size: 14px;
-            line-height: 1.6;
-            color: #555;
-            margin-top: 8px;
+            padding: 14px 4px 0;
         }
 
-        .mono {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 13px;
-            word-break: break-all;
-            color: #333;
+        .mini {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .miniBtn {
+            flex: 1 1 220px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .04);
+            color: var(--text);
+            padding: 12px 12px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .miniBtn:active {
+            transform: translateY(1px);
         }
 
         .hidden {
-            display: none;
-        }
-
-        .okmsg {
-            font-size: 16px;
-            color: #0a6;
-            font-weight: 800;
-            margin-top: 8px;
-        }
-
-        hr {
-            border: none;
-            border-top: 2px solid #eee;
-            margin: 14px 0;
-        }
-
-        /* iPhone向け：クリック後に出す“強い案内” */
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, .62);
-            display: none;
-            padding: 16px;
-            box-sizing: border-box;
-            z-index: 9999;
-        }
-
-        .overlay.show {
-            display: block;
-        }
-
-        .ovcard {
-            background: #fff;
-            border-radius: 18px;
-            padding: 16px;
-            max-width: 720px;
-            margin: 0 auto;
-            border: 2px solid #ddd;
-        }
-
-        .ovtitle {
-            font-size: 22px;
-            font-weight: 900;
-            margin: 0 0 8px;
-            line-height: 1.35;
-        }
-
-        .ovtext {
-            font-size: 18px;
-            line-height: 1.7;
-            margin: 0 0 10px;
-        }
-
-        .close {
-            font-size: 16px;
-            font-weight: 900;
+            display: none !important;
         }
     </style>
 </head>
 
 <body>
     <div class="wrap">
-        <!-- ★自治体名だけここを変える（例：蕨（わらび）／戸田（とだ）） -->
-        <div class="title">自治体名<br>掲示場ナビ</div>
-
-        <p class="sub">
-            LINEの中で他のLINE操作をすると画面が消えることがあります。<br>
-            <b>Chrome / Safari</b> でひらいてください。
-        </p>
-
-        <div class="card warn">
-            <div class="device" id="deviceLine">端末を確認中…</div>
-            <p class="hint" id="deviceHint">下のボタンを押してください。</p>
-        </div>
-
-        <!-- ボタンは1つだけ。文言は統一 -->
-        <a id="mainBtn" class="bigbtn hidden" href="#">このボタンを押す</a>
-
         <div class="card">
-            <div class="sectionTitle">うまくいかないとき</div>
-            <ol class="steps">
-                <li><b>「URLをコピー」</b> を押す</li>
-                <li>Chrome / Safari をひらく</li>
-                <li>上のアドレス欄に <b>はりつける</b></li>
-            </ol>
+            <div class="badge" id="deviceBadge">端末を判定中…</div>
 
-            <a id="copyBtn" class="bigbtn secondary" href="javascript:void(0)">URLをコピー</a>
-            <div id="copied" class="okmsg hidden">コピーしました。Chrome/Safariをひらいて はりつけてください。</div>
-
-            <div class="small">コピーされるURL：</div>
-            <div id="fullUrl" class="mono"></div>
-
-            <div class="small">
-                ※ 右下か右上にある <span class="pill">︙</span> や <span class="pill">□↑</span> から
-                「ブラウザーで開く」が選べることがあります。
+            <div class="title" id="mainTitle">掲示場ナビを開きます</div>
+            <div class="subtitle" id="subTitle">
+                迷ったら、まずは下の青いボタンを押してください。
             </div>
-        </div>
 
-        <div class="small">
-            ※ iPhoneは、ページからSafariを“自動で起動”できない場合があります。そのときは上の手順を使ってください。
-        </div>
-    </div>
+            <button class="cta" id="openBtn" type="button">
+                ここを押して地図を大きく表示する
+            </button>
 
-    <!-- iPhoneクリック後の“強い案内” -->
-    <div id="overlay" class="overlay" role="dialog" aria-modal="true">
-        <div class="ovcard">
-            <div class="ovtitle">iPhoneの方へ</div>
-            <p class="ovtext">
-                右下か右上にある <span class="pill">︙</span> か <span class="pill">□↑</span>を押して、<br>
-                <b>「ブラウザで開く / Safariで開く」</b> を選んでください。<br><br>
-                うまく出ないときは、下の「URLをコピー」を押して、Safariの上に貼り付けてください。
-            </p>
-            <a class="bigbtn secondary close" href="javascript:void(0)" id="closeOverlay">閉じる</a>
+            <div class="bigStep" id="stepsBox">
+                <div class="stepRow">
+                    <div class="num">1</div>
+                    <div class="stepText">
+                        青いボタンを押す
+                        <small>押すだけでOKです</small>
+                    </div>
+                </div>
+                <div class="stepRow" id="step2">
+                    <div class="num">2</div>
+                    <div class="stepText" id="step2Text">
+                        次の画面で「Safari」または「Chrome」を選ぶ
+                        <small>※ iPhoneではアプリの一覧が出ることがあります</small>
+                    </div>
+                </div>
+                <div class="stepRow" id="step3">
+                    <div class="num">3</div>
+                    <div class="stepText">
+                        地図が開いたら、案内どおりに進む
+                        <small>戻りたいときは「戻る」ボタンを押します</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="note" id="noteBox">
+                <span class="warn">iPhoneの方へ：</span>
+                ボタンを押すと、アプリの一覧（共有の画面）が出ることがあります。<br />
+                そのときは、一覧の中から <b>Safari</b>（または <b>Chrome</b>）を選んでください。
+            </div>
+
+            <div class="mini">
+                <button class="miniBtn" id="retryBtn" type="button">もう一度ひらく</button>
+                <button class="miniBtn" id="helpBtn" type="button">うまくいかない時</button>
+            </div>
+
+            <div class="note hidden" id="helpBox">
+                <b>うまくいかない時</b><br />
+                ・一度この画面を閉じて、もう一度URLを開きなおしてください。<br />
+                ・iPhoneは「Safari」を選ぶと見やすくなります。<br />
+                ・Androidは「Chrome」で開くと見やすくなります。<br />
+            </div>
+
+            <div class="footer">
+                ※ このページは「開くための案内ページ」です（地図は別画面で開きます）
+            </div>
         </div>
     </div>
 
     <script>
-        (function () {
+        // ▼▼▼ ここだけ差し替え（掲示場ナビのURL） ▼▼▼
+        // 例）"https://nihonkatana.github.io/xxx/index.html"
+        const NAVI_URL = "https://nihonkatana.github.io/";
+        // ▲▲▲ ここだけ差し替え ▲▲▲
+
+        function detectDevice() {
             const ua = navigator.userAgent || "";
-            const isAndroid = /Android/i.test(ua);
             const isIOS = /iPhone|iPad|iPod/i.test(ua);
+            const isAndroid = /Android/i.test(ua);
+            const isLine = /Line\/|LINE/i.test(ua);
+            const isInApp = isLine || /FBAN|FBAV|Instagram/i.test(ua); // ざっくり
+            return { isIOS, isAndroid, isLine, isInApp, ua };
+        }
 
-            const baseUrl = location.href.split("#")[0].split("?")[0];
-            const navUrl = new URL("./index.html", baseUrl).toString();
-
-            const deviceLine = document.getElementById("deviceLine");
-            const deviceHint = document.getElementById("deviceHint");
-            const mainBtn = document.getElementById("mainBtn");
-            const overlay = document.getElementById("overlay");
-            const closeOverlay = document.getElementById("closeOverlay");
-
-            document.getElementById("fullUrl").textContent = navUrl;
-
-            function showCopied() {
-                const copied = document.getElementById("copied");
-                copied.classList.remove("hidden");
-                setTimeout(() => copied.classList.add("hidden"), 2600);
+        function openNavi() {
+            // iPhoneのアプリ内ブラウザでは「共有シート」が出る場合があるが、それでも説明が破綻しない設計にしている
+            try {
+                window.open(NAVI_URL, "_blank", "noopener,noreferrer");
+            } catch (e) {
+                // 最終手段
+                location.href = NAVI_URL;
             }
+        }
 
-            async function copyUrl() {
-                try {
-                    await navigator.clipboard.writeText(navUrl);
-                } catch (e) {
-                    const ta = document.createElement("textarea");
-                    ta.value = navUrl;
-                    ta.style.position = "fixed";
-                    ta.style.left = "-9999px";
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(ta);
-                }
-                showCopied();
-            }
+        function setTextByDevice() {
+            const d = detectDevice();
+            const badge = document.getElementById("deviceBadge");
+            const noteBox = document.getElementById("noteBox");
+            const step2Text = document.getElementById("step2Text");
 
-            // メインボタンの設定
-            if (isAndroid) {
-                deviceLine.textContent = "この端末：Android";
-                deviceHint.textContent = "このボタンを押す → Chromeに切り替わります。";
-                const afterScheme = navUrl.replace(/^https?:\/\//, "");
-                const intentUrl = "intent://" + afterScheme + "#Intent;scheme=https;package=com.android.chrome;end";
-                mainBtn.href = intentUrl;
-                mainBtn.textContent = "このボタンを押す";
-                mainBtn.classList.remove("hidden");
-            } else if (isIOS) {
-                deviceLine.textContent = "この端末：iPhone";
-                deviceHint.textContent = "このボタンを押したあと、<span class="pill">︙</span> や <span class="pill">□↑</span>を「ブラウザー / Safariで開く」";
-                mainBtn.href = navUrl; // 同じWebViewで開くことがあるが、クリックの“きっかけ”が重要
-                mainBtn.textContent = "このボタンを押す";
-                mainBtn.classList.remove("hidden");
-
-                // iPhone: クリック時に共有シートを試し、同時にURLコピー＋強い案内を出す
-                mainBtn.addEventListener("click", async (e) => {
-                    // クリックを“ユーザー操作”として使う
-                    e.preventDefault();
-
-                    // まずコピー（失敗してもフォールバックあり）
-                    await copyUrl();
-
-                    // 共有シート（出れば「Safariで開く」が現れやすい）
-                    if (navigator.share) {
-                        try {
-                            await navigator.share({ title: document.title, url: navUrl });
-                            return;
-                        } catch (err) {
-                            // キャンセル含めて無視し、案内を表示
-                        }
-                    }
-
-                    // 共有が無理/キャンセルの場合：案内を強制表示
-                    overlay.classList.add("show");
-
-                    // 一応URLへも遷移（同一WebView内の可能性はある）
-                    setTimeout(() => { location.href = navUrl; }, 300);
-                });
+            if (d.isIOS) {
+                badge.textContent = d.isLine ? "iPhone（LINEの中）" : "iPhone";
+                // iPhoneは共有シートが出やすいので、説明をiPhone寄りに
+                step2Text.innerHTML =
+                    '次の画面で <b>Safari</b>（または <b>Chrome</b>）を選ぶ' +
+                    '<small>※ iPhoneではアプリの一覧が出ることがあります</small>';
+                noteBox.classList.remove("hidden");
+            } else if (d.isAndroid) {
+                badge.textContent = d.isLine ? "Android（LINEの中）" : "Android";
+                // Androidはそのまま開くことも多い。説明は柔らかく。
+                step2Text.innerHTML =
+                    '次の画面が出たら <b>Chrome</b> を選ぶ' +
+                    '<small>※ そのまま地図が開くこともあります</small>';
+                noteBox.classList.add("hidden");
             } else {
-                deviceLine.textContent = "この端末：不明";
-                deviceHint.textContent = "下の「URLをコピー」を使ってください。";
-                mainBtn.href = navUrl;
-                mainBtn.textContent = "このボタンを押す";
-                mainBtn.classList.remove("hidden");
+                badge.textContent = "端末：不明";
+                noteBox.classList.add("hidden");
             }
+        }
 
-            // URLコピー
-            document.getElementById("copyBtn").addEventListener("click", copyUrl);
+        document.getElementById("openBtn").addEventListener("click", openNavi);
+        document.getElementById("retryBtn").addEventListener("click", openNavi);
+        document.getElementById("helpBtn").addEventListener("click", () => {
+            document.getElementById("helpBox").classList.toggle("hidden");
+        });
 
-            // overlay close
-            closeOverlay.addEventListener("click", () => overlay.classList.remove("show"));
-            overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("show"); });
-        })();
+        setTextByDevice();
     </script>
 </body>
 
