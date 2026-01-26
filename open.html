@@ -4,72 +4,96 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>掲示場ナビをブラウザで開く</title>
+    <title>戸田｜掲示場ナビをひらく</title>
     <style>
         :root {
-            --pad: 16px;
+            --pad: 18px;
         }
 
         body {
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
             margin: 0;
-            padding: 0;
             background: #fff;
             color: #111;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
         }
 
         .wrap {
             max-width: 720px;
             margin: 0 auto;
-            padding: 18px var(--pad) 28px;
+            padding: 20px var(--pad) 30px;
         }
 
-        h1 {
-            font-size: 22px;
-            margin: 10px 0 14px;
-            line-height: 1.35;
+        .title {
+            font-weight: 900;
+            line-height: 1.2;
+            font-size: 30px;
+            margin: 6px 0 10px;
+        }
+
+        .sub {
+            font-size: 18px;
+            line-height: 1.5;
+            margin: 0 0 14px;
+            color: #111;
         }
 
         .card {
-            border: 1px solid #ddd;
-            border-radius: 14px;
+            border: 2px solid #e5e5e5;
+            border-radius: 18px;
             padding: 14px;
-            margin: 12px 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, .04);
+            margin: 14px 0;
         }
 
-        .big {
+        .warn {
+            border-color: #bfe6bf;
+            background: #f3fff3;
+        }
+
+        .device {
+            font-size: 18px;
+            font-weight: 900;
+            margin: 0 0 6px;
+        }
+
+        .hint {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0;
+            color: #222;
+        }
+
+        .bigbtn {
             display: block;
             width: 100%;
-            font-size: 20px;
-            font-weight: 700;
-            padding: 14px 14px;
-            border-radius: 14px;
-            border: 1px solid #111;
-            background: #111;
-            color: #fff;
+            padding: 18px 14px;
+            border-radius: 18px;
             text-align: center;
             text-decoration: none;
+            font-weight: 900;
+            font-size: 24px;
+            border: 2px solid #111;
+            background: #111;
+            color: #fff;
             box-sizing: border-box;
-            margin: 10px 0;
+            margin: 12px 0;
         }
 
-        .big.secondary {
+        .bigbtn.secondary {
             background: #fff;
             color: #111;
         }
 
-        .note {
-            font-size: 15px;
-            line-height: 1.6;
-            margin: 8px 0 0;
-            color: #333;
+        .sectionTitle {
+            font-size: 20px;
+            font-weight: 900;
+            margin: 2px 0 8px;
         }
 
         .steps {
-            font-size: 16px;
+            margin: 0;
+            padding-left: 22px;
+            font-size: 18px;
             line-height: 1.75;
-            margin: 8px 0 0;
         }
 
         .steps li {
@@ -78,92 +102,86 @@
 
         .pill {
             display: inline-block;
-            padding: 2px 8px;
-            border: 1px solid #ccc;
+            padding: 2px 10px;
+            border: 2px solid #ccc;
             border-radius: 999px;
-            font-size: 14px;
-            margin: 0 2px;
             background: #f7f7f7;
+            font-weight: 800;
+        }
+
+        .small {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #555;
+            margin-top: 8px;
         }
 
         .mono {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-size: 13px;
-        }
-
-        .muted {
-            color: #666;
-            font-size: 13px;
-            line-height: 1.6;
+            word-break: break-all;
+            color: #333;
         }
 
         .hidden {
             display: none;
         }
 
-        .ok {
-            padding: 10px 12px;
-            background: #f3fff3;
-            border: 1px solid #bfe6bf;
-            border-radius: 12px;
+        .okmsg {
+            font-size: 16px;
+            color: #0a6;
+            font-weight: 800;
+            margin-top: 8px;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 14px 0;
         }
     </style>
 </head>
 
 <body>
     <div class="wrap">
-        <h1>掲示場ナビは<br>Chrome / Safari で開いてください</h1>
+        <div class="title">戸田（とだ）<br>掲示場ナビ</div>
+        <p class="sub">
+            この画面（LINEの中）では、消えることがあります。<br>
+            <b>Chrome / Safari</b> でひらいてください。
+        </p>
 
-        <div class="card ok">
-            <div id="deviceLine" style="font-size:16px; font-weight:700;"></div>
-            <div class="muted" id="deviceHint"></div>
+        <div class="card warn">
+            <div class="device" id="deviceLine">端末を確認中…</div>
+            <p class="hint" id="deviceHint">下のボタンを押してください。</p>
         </div>
 
+        <a id="mainBtn" class="bigbtn hidden" href="#">読み込み中…</a>
+
         <div class="card">
-            <!-- 共通：通常リンク（外部ブラウザに切替できた後に押してもらう想定） -->
-            <a id="navLink" class="big" href="./index.html">掲示場ナビを開く</a>
+            <div class="sectionTitle">ここで止まるとき</div>
+            <ol class="steps" id="steps">
+                <li>右上の <span class="pill">︙</span> や <span class="pill">□↑</span> を押す</li>
+                <li><b>「Chromeでひらく」</b> または <b>「Safariでひらく」</b> を選ぶ</li>
+            </ol>
 
-            <!-- Android向け：Chrome intent（効く端末では直接Chromeが開く） -->
-            <a id="androidIntent" class="big secondary hidden" href="#">（Android）Chromeで開く</a>
+            <hr>
 
-            <!-- iPhone向け：案内中心 -->
-            <div id="iosGuide" class="hidden">
-                <p class="note">
-                    LINE内ブラウザだと戻った時に消えることがあります。<br>
-                    まず <span class="pill">右上の︙/共有</span> から <b>「Safariで開く」</b> を選んでください。
-                </p>
-            </div>
+            <div class="sectionTitle">うまくいかないとき</div>
+            <ol class="steps">
+                <li><b>「URLをコピー」</b> を押す</li>
+                <li>Chrome / Safari をひらく</li>
+                <li>上のアドレス欄に <b>はりつける</b></li>
+            </ol>
 
-            <div class="note">
-                うまくいかない場合は、下の「URLをコピー」を押して、Chrome/Safari のアドレス欄に貼り付けてください。
-            </div>
+            <a id="copyBtn" class="bigbtn secondary" href="javascript:void(0)">URLをコピー</a>
+            <div id="copied" class="okmsg hidden">コピーしました。Chrome/Safariをひらいて はりつけてください。</div>
 
-            <a id="copyBtn" class="big secondary" href="javascript:void(0)">URLをコピー</a>
-            <div id="copied" class="muted hidden">コピーしました。Chrome/Safariを開いて貼り付けてください。</div>
-
-            <div class="muted" style="margin-top:10px;">
-                コピーされるURL：<span id="fullUrl" class="mono"></span>
-            </div>
+            <div class="small">コピーされるURL：</div>
+            <div id="fullUrl" class="mono"></div>
         </div>
 
-        <div class="card">
-            <div style="font-size:16px; font-weight:700;">（LINE内ブラウザ → 外部ブラウザ 切り替え手順）</div>
-
-            <ol class="steps" id="stepsAndroid">
-                <li><span class="pill">右上の︙</span> を押す</li>
-                <li><b>「Chromeで開く」</b> を選ぶ</li>
-                <li>Chromeで開いたら、この画面に戻らず、ナビをそのまま使う</li>
-            </ol>
-
-            <ol class="steps hidden" id="stepsIOS">
-                <li><span class="pill">右上の…（共有）</span> を押す</li>
-                <li><b>「Safariで開く」</b> を選ぶ</li>
-                <li>Safariで開いたら、そのままナビを使う</li>
-            </ol>
-
-            <div class="muted" style="margin-top:8px;">
-                ※端末やLINEのバージョンで文言が少し違う場合があります（「外部ブラウザで開く」等）。
-            </div>
+        <div class="small">
+            ※ 端末やLINEの表示で文言が少し違う場合があります（「外部ブラウザで開く」等）。
         </div>
     </div>
 
@@ -173,58 +191,43 @@
             const isAndroid = /Android/i.test(ua);
             const isIOS = /iPhone|iPad|iPod/i.test(ua);
 
-            const deviceLine = document.getElementById("deviceLine");
-            const deviceHint = document.getElementById("deviceHint");
-            const iosGuide = document.getElementById("iosGuide");
-            const stepsAndroid = document.getElementById("stepsAndroid");
-            const stepsIOS = document.getElementById("stepsIOS");
-            const androidIntent = document.getElementById("androidIntent");
-
-            // このopen.htmlが置かれている場所を基準に index.html を想定
             const baseUrl = location.href.split("#")[0].split("?")[0];
             const navUrl = new URL("./index.html", baseUrl).toString();
 
+            const deviceLine = document.getElementById("deviceLine");
+            const deviceHint = document.getElementById("deviceHint");
+            const mainBtn = document.getElementById("mainBtn");
+
             document.getElementById("fullUrl").textContent = navUrl;
 
-            // Android: intent:// でChromeを開ける場合がある（全端末保証ではないが効くと強い）
-            // 例: https://.../index.html -> intent://.../index.html#Intent;scheme=https;package=com.android.chrome;end
             if (isAndroid) {
-                const httpsUrl = navUrl; // GitHub Pagesなので基本https
-                const afterScheme = httpsUrl.replace(/^https?:\/\//, "");
-                const intentUrl = "intent://" + afterScheme +
-                    "#Intent;scheme=https;package=com.android.chrome;end";
-
-                androidIntent.href = intentUrl;
-                androidIntent.classList.remove("hidden");
-            }
-
-            if (isAndroid) {
-                deviceLine.textContent = "この端末：Android → Chromeで開いてください";
-                deviceHint.textContent = "まず右上の︙から「Chromeで開く」を選ぶのが確実です。";
-                iosGuide.classList.add("hidden");
-                stepsAndroid.classList.remove("hidden");
-                stepsIOS.classList.add("hidden");
+                deviceLine.textContent = "この端末：Android";
+                deviceHint.textContent = "下のボタン → できなければ右上の︙ →「Chromeでひらく」";
+                const afterScheme = navUrl.replace(/^https?:\/\//, "");
+                const intentUrl = "intent://" + afterScheme + "#Intent;scheme=https;package=com.android.chrome;end";
+                mainBtn.textContent = "Chromeでひらく";
+                mainBtn.href = intentUrl;
+                mainBtn.classList.remove("hidden");
             } else if (isIOS) {
-                deviceLine.textContent = "この端末：iPhone → Safariで開いてください";
-                deviceHint.textContent = "右上の共有（…）から「Safariで開く」を選んでください。";
-                iosGuide.classList.remove("hidden");
-                stepsAndroid.classList.add("hidden");
-                stepsIOS.classList.remove("hidden");
+                deviceLine.textContent = "この端末：iPhone";
+                deviceHint.textContent = "下のボタン → できなければ右上の□↑ →「Safariでひらく」";
+                mainBtn.textContent = "Safariでひらく";
+                mainBtn.href = navUrl;
+                mainBtn.classList.remove("hidden");
             } else {
-                deviceLine.textContent = "外部ブラウザ（Chrome/Safari）で開いてください";
-                deviceHint.textContent = "下のURLコピーを使うと確実です。";
+                deviceLine.textContent = "この端末：不明";
+                deviceHint.textContent = "下のURLをコピーして、Chrome/Safariでひらいてください。";
+                mainBtn.textContent = "URLをコピーしてひらく";
+                mainBtn.href = navUrl;
+                mainBtn.classList.remove("hidden");
             }
 
-            // Copy button
             const copyBtn = document.getElementById("copyBtn");
             const copied = document.getElementById("copied");
             copyBtn.addEventListener("click", async () => {
                 try {
                     await navigator.clipboard.writeText(navUrl);
-                    copied.classList.remove("hidden");
-                    setTimeout(() => copied.classList.add("hidden"), 2500);
                 } catch (e) {
-                    // clipboardが使えない場合のフォールバック
                     const ta = document.createElement("textarea");
                     ta.value = navUrl;
                     ta.style.position = "fixed";
@@ -233,9 +236,9 @@
                     ta.select();
                     document.execCommand("copy");
                     document.body.removeChild(ta);
-                    copied.classList.remove("hidden");
-                    setTimeout(() => copied.classList.add("hidden"), 2500);
                 }
+                copied.classList.remove("hidden");
+                setTimeout(() => copied.classList.add("hidden"), 2600);
             });
         })();
     </script>
