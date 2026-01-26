@@ -188,6 +188,12 @@
               <option value="">（全投票区）</option>
             </select>
           </div>
+          <div id="sumUserWrap" style="display:none">
+            <div class="tiny" style="margin-bottom:6px">ユーザ（担当者）</div>
+            <select id="sumUser" class="field" onchange="app.renderSummary()">
+              <option value="">（全ユーザ）</option>
+            </select>
+          </div>
           <div>
             <div class="tiny" style="margin-bottom:6px">状態（AND）</div>
             <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:2px">
@@ -385,6 +391,7 @@
       // summary cache
       summary: { ok: false, points: [], state: {} },
       area_notes: {},
+      summary_area_to_user: {}, // area_id -> assignee_display_name（集計のユーザ絞り込み用）
 
       // 送信中ガード（連打防止）
       inFlight: new Set(),
@@ -572,6 +579,7 @@
           document.getElementById("sumTodo")?.addEventListener("change", () => app.renderSummary());
           document.getElementById("sumDone")?.addEventListener("change", () => app.renderSummary());
           document.getElementById("sumMemo")?.addEventListener("change", () => app.renderSummary());
+          document.getElementById("sumUser")?.addEventListener("change", () => app.renderSummary());
         }, 0);
 
         if (!store.user_id) {
@@ -1133,8 +1141,13 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
               color: app.allocStyleForArea_(areaId).color,
               weight: 2,
               fillOpacity: 0.6
-            }).bindTooltip(label, { direction: "top" });
-
+          }).bindTooltip(label, {
+            permanent: true,
+            direction: "top",
+            className: "hullLabel",
+            opacity: 0.95
+          });
+  
             mk.on("click", () => app.toggleAllocAreaSelection_(areaId));
             mk.addTo(store.allocMapLayers.markers);
             store.allocAreaPolys.set(String(areaId), mk);
@@ -1144,7 +1157,12 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
 
           if (latlngs.length === 2) {
             const line = L.polyline([[latlngs[0].lat, latlngs[0].lng], [latlngs[1].lat, latlngs[1].lng]], app.allocStyleForArea_(areaId))
-              .bindTooltip(label, { direction: "top" });
+              .bindTooltip(label, {
+                permanent: true,
+                direction: "top",
+                className: "hullLabel",
+                opacity: 0.95
+            });
 
             line.on("click", () => app.toggleAllocAreaSelection_(areaId));
             line.addTo(store.allocMapLayers.hulls);
@@ -1157,7 +1175,12 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
           if (hull.length < 3) continue;
 
           const poly = L.polygon(hull, app.allocStyleForArea_(areaId))
-            .bindTooltip(label, { sticky: true });
+            .bindTooltip(label, {
+              permanent: true,
+              direction: "center",
+              className: "hullLabel",
+              opacity: 0.95
+          });
 
           poly.on("click", () => app.toggleAllocAreaSelection_(areaId));
           poly.addTo(store.allocMapLayers.hulls);
@@ -1253,7 +1276,12 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
           }
 
           const label = app.areaLabel_(areaId);
-          layer.bindTooltip(label, { sticky: true });
+          layer.bindTooltip(label, {
+            permanent: true,
+            direction: "center",
+            className: "hullLabel",
+            opacity: 0.95
+          });
 
           // タップで投票区を開く
           layer.on("click", () => app.openPrecinct(String(areaId)));
@@ -1397,6 +1425,44 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
 
         store.summary = { ok: true, points, state };
 
+        // --- 追加：planner/allocator のときだけ、投票区→担当者(display_name) を取得してユーザ絞り込みを有効化
+        store.summary_area_to_user = {};
+        const canAlloc = (store.role === "allocator" || store.role === "planner");
+        const userWrap = document.getElementById("sumUserWrap");
+        const userSel  = document.getElementById("sumUser");
+        if (canAlloc && userWrap && userSel) {
+          try {
+            const assnResp = await postAction({ action: "alloc_list_assignments", actor_user_id: store.user_id });
+            if (assnResp.ok) {
+              const assn = assnResp.assignments || [];
+              for (const a of assn) {
+                const areaId = String(a.area_id || "");
+                const dn = String(a.assignee_display_name || "").trim();
+                if (areaId) store.summary_area_to_user[areaId] = dn; // dnが空なら未割当
+              }
+
+              // ユーザ候補（未割当は除外。必要なら入れてOK）
+              const users = Array.from(new Set(
+                Object.values(store.summary_area_to_user).map(s => String(s || "").trim()).filter(Boolean)
+              )).sort((a,b)=>a.localeCompare(b,'ja'));
+
+              const curU = userSel.value || "";
+              userSel.innerHTML = `<option value="">（全ユーザ）</option>` + users.map(u =>
+                `<option value="${escapeHtml_(u)}">${escapeHtml_(u)}</option>`
+              ).join("");
+              userSel.value = curU;
+              userWrap.style.display = "block";
+            } else {
+              userWrap.style.display = "none";
+            }
+          } catch (e) {
+            userWrap.style.display = "none";
+          }
+        } else {
+          if (userWrap) userWrap.style.display = "none";
+        }
+
+
         const sel = document.getElementById("sumArea");
         const areas = Array.from(new Set(points.map(p => String(p.area_id || "")))).filter(Boolean).sort();
         const cur = sel.value || "";
@@ -1417,6 +1483,7 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
         const wantTodo = document.getElementById("sumTodo")?.checked ?? true;
         const wantDone = document.getElementById("sumDone")?.checked ?? true;
         const wantMemo = document.getElementById("sumMemo")?.checked ?? false;
+        const wantUser = (document.getElementById("sumUser")?.value || "").trim();
 
         function matchStatus(st) {
           if (wantTodo && wantDone) return true;
@@ -1431,11 +1498,14 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
             const pid = String(p.point_id || "");
             const st = String(store.summary.state?.[pid]?.status || "todo");
             const memo = String(store.summary.state?.[pid]?.memo || "").trim();
-            return { ...p, status: st, memo };
+            const areaId = String(p.area_id || "");
+            const assignee = String(store.summary_area_to_user?.[areaId] || "").trim();
+            return { ...p, status: st, memo, assignee_display_name: assignee };
           })
           .filter(p => !area || String(p.area_id) === area)
           .filter(p => matchStatus(String(p.status || "todo")))
           .filter(p => !wantMemo || !!String(p.memo || "").trim())
+          .filter(p => !wantUser || String(p.assignee_display_name || "") === wantUser)
           .slice()
           .sort((a, b) => String(a.area_id).localeCompare(String(b.area_id)) || Number(a.order_reco || 0) - Number(b.order_reco || 0) || String(a.point_id).localeCompare(String(b.point_id)));
 
@@ -1473,6 +1543,7 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
             <div class="pointMeta">
               #${Number(p.order_reco || 0)} / ${escapeHtml_(p.point_id || "")} ${p.status === "done" ? `<span class="badge bDone">済</span>` : `<span class="badge bTodo">未</span>`}
             </div>
+            ${p.assignee_display_name ? `<div class="tiny muted">担当：${escapeHtml_(p.assignee_display_name)}</div>` : ``}
             <div class="pointName">${escapeHtml_((p.name || "").trim())}</div>
             <div class="pointAddr">${escapeHtml_((p.address || "").trim())}</div>
             ${p.memo ? `<div class="pointMemo">📝 ${escapeHtml_(p.memo)}</div>` : ``}
