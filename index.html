@@ -20,7 +20,7 @@
     <div class="row space" id="precinctDetailHeader">
       <div class="left">
         <img class="nav-logo" src="./image/nav_logo_master_1024.png" alt="掲示場ナビ" />
-        <div class="title">掲示場ナビ道 - 戸田市版</div>
+        <div class="title">掲示場ナビ道 - 戸田市版</p></div>
       </div>
       <div class="row" style="gap:8px">
         <span id="rolePill" class="pill">未ログイン</span>
@@ -50,7 +50,17 @@
       <div class="h2">はじめに</div>
       <div class="muted" style="font-size:15px;line-height:1.55">
         掲示場ナビは、ブラウザー推奨です。AndroidはChrome, iPhoneはSafali にリンクを貼り付けて開いてください。<br>
-        あらかじめ担当の投票区とその中の掲示場が割り当てられています。
+          <div class="muted" style="font-size:15px;line-height:1.55">
+            LINE内のリンクをクリックして開いた場合は、下記の操作を行ってください。
+          </div>
+          <div class="muted" style="font-size:15px;line-height:1.55">
+            ① 画面右下の <b>「…（点々）」</b> を押す<br>
+            ② <b>「（デフォルトの）ブラウザで開く」</b> を押す
+            </div>
+          <div style="margin:24px 0;text-align:center">
+            <img src="./image/open_browser.png" alt="右下の点々を押してブラウザで開く" style="max-width:100%;border-radius:12px">
+          </div>
+
       </div>
 <!--
       <div style="margin-top:16px"></div>
@@ -61,7 +71,7 @@
         初回登録後、責任者が承認すると利用開始できます。登録したことを責任者にご連絡ください。<br>
       </div>
 -->
-      <div style="margin-top:16px"></div>
+      <div style="margin-top:32px"></div>
       <div class="h2">ログイン</div>
       <div class="muted" style="font-size:15px;line-height:1.55">
         担当表に記載のログインIDとパスワードを入力してください。<br>
@@ -173,7 +183,8 @@
         <div class="row space">
           <div>
             <div class="h2">集計（全体）</div>
-            <div class="tiny">投票区と状態（未/済）で絞り込み（AND）できます。メモも表示します。</div>
+            <div class="tiny"><p>データ集計と表示まで数秒お待ちください。</p>
+              投票区と状態（未/済）で絞り込み（AND）できます。メモも表示します。</div>
           </div>
           <button class="btn small" onclick="app.loadSummary()">再読込</button>
         </div>
@@ -244,6 +255,7 @@
           </div>
         </div>
         <div class="muted" style="margin-top:10px">
+          <p>データ集計と表示まで数秒お待ちください。</p>
           「割当」と「ホワイトリスト」を切り替えられます。
         </div>
       </div>
