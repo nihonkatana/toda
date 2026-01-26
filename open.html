@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>戸田｜掲示場ナビをひらく</title>
+    <title>掲示場ナビをひらく</title>
     <style>
         :root {
             --pad: 18px;
@@ -139,14 +139,58 @@
             border-top: 2px solid #eee;
             margin: 14px 0;
         }
+
+        /* iPhone向け：クリック後に出す“強い案内” */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .62);
+            display: none;
+            padding: 16px;
+            box-sizing: border-box;
+            z-index: 9999;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        .ovcard {
+            background: #fff;
+            border-radius: 18px;
+            padding: 16px;
+            max-width: 720px;
+            margin: 0 auto;
+            border: 2px solid #ddd;
+        }
+
+        .ovtitle {
+            font-size: 22px;
+            font-weight: 900;
+            margin: 0 0 8px;
+            line-height: 1.35;
+        }
+
+        .ovtext {
+            font-size: 18px;
+            line-height: 1.7;
+            margin: 0 0 10px;
+        }
+
+        .close {
+            font-size: 16px;
+            font-weight: 900;
+        }
     </style>
 </head>
 
 <body>
     <div class="wrap">
-        <div class="title">戸田（とだ）<br>掲示場ナビ</div>
+        <!-- ★自治体名だけここを変える（例：蕨（わらび）／戸田（とだ）） -->
+        <div class="title">自治体名<br>掲示場ナビ</div>
+
         <p class="sub">
-            この画面（LINEの中）では、消えることがあります。<br>
+            LINEの中で他のLINE操作をすると画面が消えることがあります。<br>
             <b>Chrome / Safari</b> でひらいてください。
         </p>
 
@@ -155,17 +199,10 @@
             <p class="hint" id="deviceHint">下のボタンを押してください。</p>
         </div>
 
-        <a id="mainBtn" class="bigbtn hidden" href="#">読み込み中…</a>
+        <!-- ボタンは1つだけ。文言は統一 -->
+        <a id="mainBtn" class="bigbtn hidden" href="#">このボタンを押す</a>
 
         <div class="card">
-            <div class="sectionTitle">ここで止まるとき</div>
-            <ol class="steps" id="steps">
-                <li>右上の <span class="pill">︙</span> や <span class="pill">□↑</span> を押す</li>
-                <li><b>「Chromeでひらく」</b> または <b>「Safariでひらく」</b> を選ぶ</li>
-            </ol>
-
-            <hr>
-
             <div class="sectionTitle">うまくいかないとき</div>
             <ol class="steps">
                 <li><b>「URLをコピー」</b> を押す</li>
@@ -178,10 +215,28 @@
 
             <div class="small">コピーされるURL：</div>
             <div id="fullUrl" class="mono"></div>
+
+            <div class="small">
+                ※ 右上の <span class="pill">︙</span> や <span class="pill">□↑</span> から
+                「Chromeで開く / Safariで開く」が選べることがあります。
+            </div>
         </div>
 
         <div class="small">
-            ※ 端末やLINEの表示で文言が少し違う場合があります（「外部ブラウザで開く」等）。
+            ※ iPhoneは、ページからSafariを“自動で起動”できない場合があります。そのときは上の手順を使ってください。
+        </div>
+    </div>
+
+    <!-- iPhoneクリック後の“強い案内” -->
+    <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+        <div class="ovcard">
+            <div class="ovtitle">iPhoneの方へ</div>
+            <p class="ovtext">
+                右上の <span class="pill">□↑</span> を押して、<br>
+                <b>「Safariで開く」</b> を選んでください。<br><br>
+                うまく出ないときは、下の「URLをコピー」を押して、Safariの上に貼り付けてください。
+            </p>
+            <a class="bigbtn secondary close" href="javascript:void(0)" id="closeOverlay">閉じる</a>
         </div>
     </div>
 
@@ -197,34 +252,18 @@
             const deviceLine = document.getElementById("deviceLine");
             const deviceHint = document.getElementById("deviceHint");
             const mainBtn = document.getElementById("mainBtn");
+            const overlay = document.getElementById("overlay");
+            const closeOverlay = document.getElementById("closeOverlay");
 
             document.getElementById("fullUrl").textContent = navUrl;
 
-            if (isAndroid) {
-                deviceLine.textContent = "この端末：Android";
-                deviceHint.textContent = "下のボタン → できなければ右上の︙ →「Chromeでひらく」";
-                const afterScheme = navUrl.replace(/^https?:\/\//, "");
-                const intentUrl = "intent://" + afterScheme + "#Intent;scheme=https;package=com.android.chrome;end";
-                mainBtn.textContent = "Chromeでひらく";
-                mainBtn.href = intentUrl;
-                mainBtn.classList.remove("hidden");
-            } else if (isIOS) {
-                deviceLine.textContent = "この端末：iPhone";
-                deviceHint.textContent = "下のボタン → できなければ右上の□↑ →「Safariでひらく」";
-                mainBtn.textContent = "Safariでひらく";
-                mainBtn.href = navUrl;
-                mainBtn.classList.remove("hidden");
-            } else {
-                deviceLine.textContent = "この端末：不明";
-                deviceHint.textContent = "下のURLをコピーして、Chrome/Safariでひらいてください。";
-                mainBtn.textContent = "URLをコピーしてひらく";
-                mainBtn.href = navUrl;
-                mainBtn.classList.remove("hidden");
+            function showCopied() {
+                const copied = document.getElementById("copied");
+                copied.classList.remove("hidden");
+                setTimeout(() => copied.classList.add("hidden"), 2600);
             }
 
-            const copyBtn = document.getElementById("copyBtn");
-            const copied = document.getElementById("copied");
-            copyBtn.addEventListener("click", async () => {
+            async function copyUrl() {
                 try {
                     await navigator.clipboard.writeText(navUrl);
                 } catch (e) {
@@ -237,9 +276,63 @@
                     document.execCommand("copy");
                     document.body.removeChild(ta);
                 }
-                copied.classList.remove("hidden");
-                setTimeout(() => copied.classList.add("hidden"), 2600);
-            });
+                showCopied();
+            }
+
+            // メインボタンの設定
+            if (isAndroid) {
+                deviceLine.textContent = "この端末：Android";
+                deviceHint.textContent = "このボタンを押す → Chromeに切り替わります。";
+                const afterScheme = navUrl.replace(/^https?:\/\//, "");
+                const intentUrl = "intent://" + afterScheme + "#Intent;scheme=https;package=com.android.chrome;end";
+                mainBtn.href = intentUrl;
+                mainBtn.textContent = "このボタンを押す";
+                mainBtn.classList.remove("hidden");
+            } else if (isIOS) {
+                deviceLine.textContent = "この端末：iPhone";
+                deviceHint.textContent = "このボタンを押したあと、右上の□↑→「Safariで開く」";
+                mainBtn.href = navUrl; // 同じWebViewで開くことがあるが、クリックの“きっかけ”が重要
+                mainBtn.textContent = "このボタンを押す";
+                mainBtn.classList.remove("hidden");
+
+                // iPhone: クリック時に共有シートを試し、同時にURLコピー＋強い案内を出す
+                mainBtn.addEventListener("click", async (e) => {
+                    // クリックを“ユーザー操作”として使う
+                    e.preventDefault();
+
+                    // まずコピー（失敗してもフォールバックあり）
+                    await copyUrl();
+
+                    // 共有シート（出れば「Safariで開く」が現れやすい）
+                    if (navigator.share) {
+                        try {
+                            await navigator.share({ title: document.title, url: navUrl });
+                            return;
+                        } catch (err) {
+                            // キャンセル含めて無視し、案内を表示
+                        }
+                    }
+
+                    // 共有が無理/キャンセルの場合：案内を強制表示
+                    overlay.classList.add("show");
+
+                    // 一応URLへも遷移（同一WebView内の可能性はある）
+                    setTimeout(() => { location.href = navUrl; }, 300);
+                });
+            } else {
+                deviceLine.textContent = "この端末：不明";
+                deviceHint.textContent = "下の「URLをコピー」を使ってください。";
+                mainBtn.href = navUrl;
+                mainBtn.textContent = "このボタンを押す";
+                mainBtn.classList.remove("hidden");
+            }
+
+            // URLコピー
+            document.getElementById("copyBtn").addEventListener("click", copyUrl);
+
+            // overlay close
+            closeOverlay.addEventListener("click", () => overlay.classList.remove("show"));
+            overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("show"); });
         })();
     </script>
 </body>
