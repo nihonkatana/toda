@@ -972,6 +972,19 @@ ensureGeoWatch_() {
 
         app.updateGeoStatusUI_();
 
+        store.geoStartTs = Date.now();
+        // if first fix never comes, show a helpful hint (some in-app browsers block GPS)
+        store.geoStallTimer = setTimeout(() => {
+          if (!store.geo || !store.geo.ok) {
+            const pill = document.getElementById("geoPill");
+            if (pill) pill.textContent = "現在地：取得できず（📍で再取得）";
+            if (!store.geoStallNotified) {
+              store.geoStallNotified = true;
+              ui.toast("現在地が取れない場合はSafari/Chromeで開くと安定します");
+            }
+          }
+        }, 15000);
+
         store.geoWatchId = navigator.geolocation.watchPosition(
           // show "getting" immediately
 
@@ -981,6 +994,9 @@ ensureGeoWatch_() {
             if (!isFinite(lat) || !isFinite(lng)) return;
 
             store.geo = { ok: true, lat, lng, accuracy: isFinite(acc) ? acc : null, ts: Date.now() };
+
+            if (store.geoStallTimer) { clearTimeout(store.geoStallTimer); store.geoStallTimer = null; }
+            store.geoStallNotified = false;
 
             app.updateGeoLayers_();
             app.updateGeoStatusUI_();
@@ -1005,6 +1021,35 @@ ensureGeoWatch_() {
           },
           opts
         );
+      },
+
+      requestGeoOnce_(why) {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation || !navigator.geolocation.getCurrentPosition) {
+            reject(new Error("no_geolocation"));
+            return;
+          }
+          const opts = { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 };
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const c = pos.coords || {};
+              const lat = Number(c.latitude), lng = Number(c.longitude), acc = Number(c.accuracy);
+              if (!isFinite(lat) || !isFinite(lng)) { reject(new Error("bad_coords")); return; }
+              store.geo = { ok: true, lat, lng, accuracy: isFinite(acc) ? acc : null, ts: Date.now() };
+
+              if (store.geoStallTimer) { clearTimeout(store.geoStallTimer); store.geoStallTimer = null; }
+              store.geoStallNotified = false;
+
+              app.updateGeoLayers_();
+              app.updateGeoStatusUI_();
+              resolve(store.geo);
+            },
+            (err) => {
+              reject(err || new Error("geo_error"));
+            },
+            opts
+          );
+        });
       },
 
       addLocateControlToMap_(mapObj) {
@@ -1063,7 +1108,14 @@ ensureGeoWatch_() {
 
       panToCurrentLocation_() {
         app.ensureGeoWatch_();
-        if (!store.geo || !store.geo.ok) { ui.toast("現在地を取得中…（許可が必要です）"); return; }
+        if (!store.geo || !store.geo.ok) {
+          ui.toast("現在地を取得中…（許可が必要です）");
+          // iOS/一部ブラウザでは watchPosition が動かないことがあるため、ユーザー操作で一度だけ再取得
+          app.requestGeoOnce_("pan").then(() => {
+            if (store.geo && store.geo.ok) app.panToCurrentLocation_();
+          }).catch(() => {});
+          return;
+        }
 
         const lat = store.geo.lat, lng = store.geo.lng;
         const acc = store.geo.accuracy;
