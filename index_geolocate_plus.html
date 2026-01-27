@@ -68,6 +68,19 @@
       font-weight:700;
       width:56px;
     }
+    .leaflet-control.bounds-btn a{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:38px;
+      height:38px;
+      background:#fff;
+      border-radius:8px;
+      box-shadow:0 2px 10px rgba(0,0,0,.18);
+      text-decoration:none;
+      font-size:18px;
+    }
+
 
   </style>
 
@@ -232,14 +245,7 @@
         </div>
 
         <div class="sep"></div>
-
-        <div id="recommendWrap" style="display:none">
-          <div class="recoTitle">おすすめ（近い順・上位3件）</div>
-          <div id="recommendList" class="list recommend"></div>
-          <div class="sep"></div>
-        </div>
-
-        <div id="pointList" class="list"></div>
+<div id="pointList" class="list"></div>
       </div>
     </div>
 
@@ -465,6 +471,8 @@
       // field map
       fieldOverviewMap: null,
       fieldOverviewLayers: { hulls: null },
+      fieldOverviewAssignedBounds: null,
+      areaPointsBounds: null,
 
       // geolocation
       geo: { ok: false, lat: null, lng: null, accuracy: null, ts: null },
@@ -962,8 +970,31 @@
         }
       },
 
+      fitMapToContent_(mapObj) {
+        if (!mapObj) return;
 
-ensureGeoWatch_() {
+        // 担当投票区 全体マップ：担当範囲へ戻す
+        if (store.fieldOverviewMap && mapObj === store.fieldOverviewMap) {
+          if (store.fieldOverviewAssignedBounds) {
+            try { mapObj.fitBounds(store.fieldOverviewAssignedBounds, { padding: [16, 16] }); } catch (e) { }
+            ui.toast("担当投票区の範囲へ戻しました");
+            return;
+          }
+        }
+
+        // 投票区詳細マップ：その投票区の掲示場範囲へ戻す
+        if (store.map && mapObj === store.map) {
+          if (store.areaPointsBounds) {
+            try { mapObj.fitBounds(store.areaPointsBounds, { padding: [20, 20] }); } catch (e) { }
+            ui.toast("投票区の範囲へ戻しました");
+            return;
+          }
+        }
+
+        ui.toast("範囲が見つかりません");
+      },
+
+      ensureGeoWatch_() {
         if (!navigator.geolocation) return;
 
         if (store.geoWatchId != null) return; // already watching
@@ -1068,7 +1099,7 @@ ensureGeoWatch_() {
           L.DomEvent.on(a, "click", (e) => {
             L.DomEvent.preventDefault(e);
             L.DomEvent.stopPropagation(e);
-            app.panToCurrentLocation_();
+            app.panToCurrentLocation_(mapObj);
           });
           return div;
         };
@@ -1093,6 +1124,24 @@ ensureGeoWatch_() {
         };
         fctrl.addTo(mapObj);
 
+        // fit-to-content control (担当範囲/投票区範囲へ戻す)
+        const bctrl = L.control({ position: "bottomright" });
+        bctrl.onAdd = () => {
+          const div = L.DomUtil.create("div", "leaflet-control bounds-btn");
+          const a = L.DomUtil.create("a", "", div);
+          a.href = "#";
+          a.title = "範囲へ（担当/投票区）";
+          a.setAttribute("aria-label", "範囲へ（担当/投票区）");
+          a.innerHTML = "🗺";
+          L.DomEvent.on(a, "click", (e) => {
+            L.DomEvent.preventDefault(e);
+            L.DomEvent.stopPropagation(e);
+            app.fitMapToContent_(mapObj);
+          });
+          return div;
+        };
+        bctrl.addTo(mapObj);
+
         // if user drags the map, stop following automatically
         const followKey = "followBound:" + key;
         if (!store.geoFollowControls.has(followKey)) {
@@ -1106,13 +1155,14 @@ ensureGeoWatch_() {
         app.updateGeoFollowControls_();
       },
 
-      panToCurrentLocation_() {
+      panToCurrentLocation_(mapObj)
+      {
         app.ensureGeoWatch_();
         if (!store.geo || !store.geo.ok) {
           ui.toast("現在地を取得中…（許可が必要です）");
           // iOS/一部ブラウザでは watchPosition が動かないことがあるため、ユーザー操作で一度だけ再取得
           app.requestGeoOnce_("pan").then(() => {
-            if (store.geo && store.geo.ok) app.panToCurrentLocation_();
+            if (store.geo && store.geo.ok) app.panToCurrentLocation_(mapObj);
           }).catch(() => {});
           return;
         }
@@ -1120,15 +1170,15 @@ ensureGeoWatch_() {
         const lat = store.geo.lat, lng = store.geo.lng;
         const acc = store.geo.accuracy;
 
-        const targetMap = store.map || store.fieldOverviewMap;
+        const targetMap = mapObj || store.map || store.fieldOverviewMap;
         if (targetMap) {
-          const z = targetMap.getZoom();
-          targetMap.setView([lat, lng], Math.max(16, z || 16), { animate: true });
-          if (isFinite(acc) && acc > 0 && acc < 800) {
-            try { targetMap.fitBounds(L.circle([lat, lng], { radius: acc }).getBounds(), { padding: [28, 28] }); } catch (e) {}
-          }
+          // 位置を表示するが、ズームは勝手に変えない（投票区/掲示場が消える混乱を防ぐ）
+          try { targetMap.panTo([lat, lng], { animate: true }); } catch (e) { }
+
+          // 「戻る」用に内容範囲へ戻すボタンを用意している（担当範囲/投票区範囲）
+          // ※自動で戻さない：ユーザーが現在地周辺を確認できるようにする
         }
-        ui.toast("現在地へ移動しました");
+        ui.toast("現在地を表示しました（必要なら「範囲へ」で戻れます）");
       },
 
       updateGeoLayers_() {
@@ -1271,93 +1321,6 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
       renderPointList_(areaId) {
         const list = document.getElementById("pointList");
         list.innerHTML = "";
-
-        const recoWrap = document.getElementById("recommendWrap");
-        const recoList = document.getElementById("recommendList");
-        if (recoList) recoList.innerHTML = "";
-
-        // 現在地が取れていれば「近い順」＋距離表示
-        const hasGeo = !!(store.geo && store.geo.ok && isFinite(store.geo.lat) && isFinite(store.geo.lng));
-
-        const pts = store.points
-          .filter(p => p.area_id === areaId)
-          .map(p => {
-            let dist = null;
-            if (hasGeo && isFinite(Number(p.lat)) && isFinite(Number(p.lng))) {
-              dist = haversineMeters_(store.geo.lat, store.geo.lng, Number(p.lat), Number(p.lng));
-            }
-            return { ...p, __dist: dist };
-          })
-          .slice()
-          .sort((a, b) => {
-            // 未を優先しつつ、近い順
-            const sa = (store.state[a.point_id]?.status || "todo");
-            const sb = (store.state[b.point_id]?.status || "todo");
-            if (sa !== sb) return (sa === "todo" ? -1 : 1);
-
-            const da = a.__dist, db = b.__dist;
-            const ha = isFinite(da), hb = isFinite(db);
-            if (ha && hb) return da - db;
-            if (ha && !hb) return -1;
-            if (!ha && hb) return 1;
-
-            return (a.order_reco - b.order_reco) || a.point_id.localeCompare(b.point_id);
-
-          });
-
-        // おすすめ（近い順上位3件）
-        if (recoWrap) {
-          if (!hasGeo) {
-            recoWrap.style.display = "none";
-          } else {
-            const stOf = (pid) => (store.state[pid]?.status || "todo");
-            const candidates = pts
-              .filter(p => isFinite(p.__dist))
-              .slice()
-              .sort((a,b)=> a.__dist - b.__dist);
-
-            const recos = [];
-            for (const p of candidates) {
-              if (stOf(p.point_id) === "todo") recos.push(p);
-              if (recos.length >= 3) break;
-            }
-            if (recos.length < 3) {
-              for (const p of candidates) {
-                if (recos.some(x => x.point_id === p.point_id)) continue;
-                recos.push(p);
-                if (recos.length >= 3) break;
-              }
-            }
-
-            if (recos.length === 0) {
-              recoWrap.style.display = "none";
-            } else {
-              recoWrap.style.display = "";
-              if (recoList) {
-                for (const p of recos) {
-                  const st = stOf(p.point_id);
-                  const memo = store.state[p.point_id]?.memo || "";
-                  const item = document.createElement("div");
-                  item.className = "item";
-                  item.innerHTML = `
-                    <div class="pointMeta">
-                      ${escapeHtml_(p.point_id)} ${statusBadge(st)}
-                      <span class="distBadge">現在地から ${escapeHtml_(formatMeters_(p.__dist))}</span>
-                    </div>
-                    <div class="pointName">${escapeHtml_((p.name || "").trim())}</div>
-                    ${memo ? `<div class="pointMemo">📝 ${escapeHtml_(memo)}</div>` : ``}
-                    <div class="actions">
-                      <button class="btn small" data-act="nav"  data-pid="${escapeHtml_(p.point_id)}">単点ナビ</button>
-                      <button class="btn small done" data-act="done" data-pid="${escapeHtml_(p.point_id)}">済</button>
-                    </div>
-                  `;
-                  recoList.appendChild(item);
-                }
-              }
-            }
-          }
-        }
-
         for (const p of pts) {
           const st = store.state[p.point_id]?.status || "todo";
           const memo = store.state[p.point_id]?.memo || "";
@@ -1777,7 +1740,10 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
         }
 
         if (bounds.length > 0) {
-          try { store.fieldOverviewMap.fitBounds(bounds, { padding: [16, 16] }); } catch (e) { }
+          try {
+            store.fieldOverviewAssignedBounds = L.latLngBounds(bounds);
+            store.fieldOverviewMap.fitBounds(store.fieldOverviewAssignedBounds, { padding: [16, 16] });
+          } catch (e) { }
         }
 
         // 現在地（青丸＋精度円）を反映
@@ -1867,8 +1833,16 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
           store.mapMarkers.push(mk);
         }
 
+        if (latlngs.length >= 1) {
+          try { store.areaPointsBounds = L.latLngBounds(latlngs); } catch (e) { store.areaPointsBounds = null; }
+        }
+
         if (latlngs.length >= 2) store.map.fitBounds(latlngs, { padding: [20, 20] });
-        else store.map.setView(latlngs[0], 16);
+        else {
+          // 1点だけの時もズームし過ぎない（見失い防止）
+          const z = store.map.getZoom ? store.map.getZoom() : 15;
+          store.map.setView(latlngs[0], Math.min(15, z || 15));
+        }
 
         // 現在地（青丸＋精度円）を反映
         app.updateGeoLayers_();
