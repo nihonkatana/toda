@@ -1321,6 +1321,33 @@ if (!store.assigned_areas || store.assigned_areas.length === 0) {
       renderPointList_(areaId) {
         const list = document.getElementById("pointList");
         list.innerHTML = "";
+
+        const hasGeo = !!(store.geo && store.geo.ok && isFinite(store.geo.lat) && isFinite(store.geo.lng));
+
+        // ✅ area内の全地点を、(未→済) 優先しつつ「近い順」＋距離表示にする
+        const pts = (store.points || [])
+          .filter(p => String(p.area_id) === String(areaId))
+          .map(p => {
+            let dist = null;
+            if (hasGeo && isFinite(Number(p.lat)) && isFinite(Number(p.lng))) {
+              dist = haversineMeters_(store.geo.lat, store.geo.lng, Number(p.lat), Number(p.lng));
+            }
+            return { ...p, __dist: dist };
+          })
+          .sort((a, b) => {
+            const sa = (store.state[a.point_id]?.status || "todo");
+            const sb = (store.state[b.point_id]?.status || "todo");
+            if (sa !== sb) return sa === "todo" ? -1 : 1;
+
+            const da = a.__dist, db = b.__dist;
+            const ha = isFinite(da), hb = isFinite(db);
+            if (ha && hb) return da - db;
+            if (ha && !hb) return -1;
+            if (!ha && hb) return 1;
+
+            return (a.order_reco - b.order_reco) || String(a.point_id).localeCompare(String(b.point_id));
+          });
+
         for (const p of pts) {
           const st = store.state[p.point_id]?.status || "todo";
           const memo = store.state[p.point_id]?.memo || "";
